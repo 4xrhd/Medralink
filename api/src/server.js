@@ -16,14 +16,19 @@ const agentsRouter = require('./routes/agents');
 
 const app = express();
 
-// Middlewares
+// Security and performance hardening
+app.disable('x-powered-by');
 app.use(cors({ origin: '*' }));
-app.use(express.json());
+app.use(express.json({ limit: '4mb' }));
 app.use(authMiddleware);
 
-// Request Logger
+// Structured Request Logger
 app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path} - User: ${req.user ? req.user.role : 'Guest'}`);
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.path} ${res.statusCode} (${duration}ms) - User: ${req.user ? req.user.role : 'Guest'}`);
+  });
   next();
 });
 
@@ -41,8 +46,18 @@ app.use('/', networkRouter);
 // Global Error Handler (FHIR OperationOutcome)
 app.use(errorHandler);
 
+// Global Process Exception Handlers
+process.on('unhandledRejection', (reason) => {
+  console.error('[Process Error] Unhandled Promise Rejection:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('[Process Error] Uncaught Exception:', err);
+});
+
+let server = null;
 if (require.main === module) {
-  app.listen(PORT, () => {
+  server = app.listen(PORT, () => {
     console.log(`=======================================================`);
     console.log(` 🏥 MedraLink HL7 FHIR & Blockchain REST API Gateway`);
     console.log(` 🌐 Server listening on http://localhost:${PORT}`);
@@ -50,6 +65,21 @@ if (require.main === module) {
     console.log(` 🛡️  Privacy Mode: Zero PII on-chain (AES-256-GCM off-chain)`);
     console.log(`=======================================================`);
   });
+
+  const gracefulShutdown = (signal) => {
+    console.log(`\n[${signal}] Received shutdown signal. Closing MedraLink API server cleanly...`);
+    if (server) {
+      server.close(() => {
+        console.log('HTTP server closed. Exiting process.');
+        process.exit(0);
+      });
+    } else {
+      process.exit(0);
+    }
+  };
+
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 }
 
 module.exports = app;
