@@ -44,8 +44,8 @@ export default function App() {
         <main className="flex-1">
           <PortalRouter />
         </main>
-        <footer className="border-t border-slate-800/80 py-5 text-center text-xs text-slate-500 bg-slate-950">
-          <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <footer className="border-t border-slate-800/80 py-5 text-center text-xs text-slate-500 bg-slate-950/60 backdrop-blur-sm">
+          <div className="app-container flex flex-col sm:flex-row items-center justify-between gap-2">
             <span>MedraLink Prototype | Decentralized Healthcare Interoperability & Audit Provenance</span>
             <span className="font-mono text-slate-400">Hyperledger Fabric 2.5 • HL7 FHIR R4 • Zero PII On-Chain</span>
           </div>

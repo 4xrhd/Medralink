@@ -143,7 +143,7 @@ export default function AgenticAIPortal() {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="app-container py-8 space-y-8">
       {agentError && (
         <ErrorBanner
           error={agentError}

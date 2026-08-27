@@ -96,7 +96,7 @@ export default function EmergencyPortal() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="app-container py-8 space-y-8">
       {/* Emergency Header */}
       <div className="glass-panel p-6 border-rose-900/40 bg-slate-900/90 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">

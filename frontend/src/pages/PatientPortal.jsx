@@ -129,7 +129,7 @@ export default function PatientPortal() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="app-container py-8 space-y-8">
       {/* Patient Profile & Bangladesh Smart Health Card */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 glass-panel p-6 border-slate-800 flex flex-col justify-between gap-5">
