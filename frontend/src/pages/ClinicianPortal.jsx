@@ -224,7 +224,7 @@ export default function ClinicianPortal() {
                       const sel = patientsList.find(p => p.syntheticId === e.target.value);
                       if (sel?.patientRefHash) setPatientRefHash(sel.patientRefHash);
                     }}
-                    className="w-full bg-slate-950/80 border border-slate-750 rounded-lg px-3.5 py-2.5 text-xs text-teal-300 focus:outline-none focus:border-sky-500/70 focus:ring-1 focus:ring-sky-500/40 transition-all font-medium"
+                    className="form-input text-teal-300 font-medium"
                   >
                     {patientsList.map((p) => (
                       <option key={p.syntheticId} value={p.syntheticId}>
@@ -241,7 +241,7 @@ export default function ClinicianPortal() {
                   type="text"
                   value={patientRefHash}
                   onChange={(e) => setPatientRefHash(e.target.value)}
-                  className="w-full bg-slate-950/80 border border-slate-750 rounded-lg px-3.5 py-2.5 text-xs font-mono text-slate-200 focus:outline-none focus:border-sky-500/70 focus:ring-1 focus:ring-sky-500/40 transition-all"
+                  className="form-input font-mono"
                   placeholder="Paste pseudonymous patientRefHash..."
                   required
                 />
@@ -253,7 +253,7 @@ export default function ClinicianPortal() {
                   type="text"
                   value={recordId}
                   onChange={(e) => setRecordId(e.target.value)}
-                  className="w-full bg-slate-950/80 border border-slate-750 rounded-lg px-3.5 py-2.5 text-xs font-mono text-slate-200 focus:outline-none focus:border-sky-500/70 focus:ring-1 focus:ring-sky-500/40 transition-all"
+                  className="form-input font-mono"
                   placeholder="Leave empty to use latest patient record..."
                 />
               </div>
@@ -264,7 +264,7 @@ export default function ClinicianPortal() {
                   type="text"
                   value={consentId}
                   onChange={(e) => setConsentId(e.target.value)}
-                  className="w-full bg-slate-950/80 border border-slate-750 rounded-lg px-3.5 py-2.5 text-xs font-mono text-slate-200 focus:outline-none focus:border-sky-500/70 focus:ring-1 focus:ring-sky-500/40 transition-all"
+                  className="form-input font-mono"
                   placeholder="Leave empty to use active on-chain consent..."
                 />
               </div>
@@ -274,7 +274,7 @@ export default function ClinicianPortal() {
                 <select
                   value={purpose}
                   onChange={(e) => setPurpose(e.target.value)}
-                  className="w-full bg-slate-950/80 border border-slate-750 rounded-lg px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500/70 focus:ring-1 focus:ring-sky-500/40 transition-all"
+                  className="form-input"
                 >
                   <option value="treatment">Clinical Treatment (treatment)</option>
                   <option value="emergency">Emergency Pre-Authorization (emergency)</option>
@@ -284,7 +284,7 @@ export default function ClinicianPortal() {
               <button
                 type="submit"
                 disabled={isVerifying}
-                className="w-full py-2.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-medium text-xs flex items-center justify-center gap-2 shadow-sm transition-colors disabled:opacity-50"
+                className="btn-primary w-full"
               >
                 {isVerifying ? (
                   <Unlock className="w-3.5 h-3.5 animate-spin" />

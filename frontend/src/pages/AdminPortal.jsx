@@ -195,7 +195,7 @@ export default function AdminPortal() {
                 type="text"
                 value={providerId}
                 onChange={(e) => setProviderId(e.target.value)}
-                className="w-full bg-slate-950/80 border border-slate-750 rounded-lg px-3.5 py-2.5 text-xs font-mono text-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/50 transition-all"
+                className="form-input font-mono"
                 required
               />
             </div>
@@ -205,7 +205,7 @@ export default function AdminPortal() {
                 <select
                   value={org}
                   onChange={(e) => setOrg(e.target.value)}
-                  className="w-full bg-slate-950/80 border border-slate-750 rounded-lg px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/50 transition-all"
+                  className="form-input"
                 >
                   <option value="Org1MSP">Hospital A (Org1MSP)</option>
                   <option value="Org2MSP">Hospital B (Org2MSP)</option>
@@ -217,7 +217,7 @@ export default function AdminPortal() {
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
-                  className="w-full bg-slate-950/80 border border-slate-750 rounded-lg px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/50 transition-all"
+                  className="form-input"
                 >
                   <option value="Clinician">Clinician (General)</option>
                   <option value="Emergency">Emergency Doctor</option>
@@ -229,7 +229,7 @@ export default function AdminPortal() {
             <button
               type="submit"
               disabled={isRegisteringProvider}
-              className="w-full py-2.5 rounded-lg bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 font-medium text-xs transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+              className="btn-secondary w-full"
             >
               Anchor Provider Reference on Blockchain
             </button>
@@ -249,7 +249,7 @@ export default function AdminPortal() {
                 type="text"
                 value={syntheticId}
                 onChange={(e) => setSyntheticId(e.target.value)}
-                className="w-full bg-slate-950/80 border border-slate-750 rounded-lg px-3.5 py-2.5 text-xs font-mono text-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/50 transition-all"
+                className="form-input font-mono"
                 required
               />
             </div>
@@ -260,7 +260,7 @@ export default function AdminPortal() {
                   type="date"
                   value={dob}
                   onChange={(e) => setDob(e.target.value)}
-                  className="w-full bg-slate-950/80 border border-slate-750 rounded-lg px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/50 transition-all"
+                  className="form-input"
                   required
                 />
               </div>
@@ -269,7 +269,7 @@ export default function AdminPortal() {
                 <select
                   value={patientHomeOrg}
                   onChange={(e) => setPatientHomeOrg(e.target.value)}
-                  className="w-full bg-slate-950/80 border border-slate-750 rounded-lg px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/50 transition-all"
+                  className="form-input"
                 >
                   <option value="Org1MSP">Hospital A (Org1MSP)</option>
                   <option value="Org2MSP">Hospital B (Org2MSP)</option>
@@ -279,7 +279,7 @@ export default function AdminPortal() {
             <button
               type="submit"
               disabled={isRegisteringPatient}
-              className="w-full py-2.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-medium text-xs transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+              className="btn-primary w-full"
             >
               Generate Hash & Register on Ledger
             </button>

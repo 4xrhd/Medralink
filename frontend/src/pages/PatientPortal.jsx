@@ -253,7 +253,7 @@ export default function PatientPortal() {
                   <select
                     value={grantee}
                     onChange={(e) => setGrantee(e.target.value)}
-                    className="w-full bg-slate-950/80 border border-slate-750 rounded-lg px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/50 transition-all"
+                    className="form-input"
                   >
                     <option value="DR_HASAN_CLINICIAN">Dr. Hasan Mahmud (Hospital A - Internal Med)</option>
                     <option value="DR_ALAM_EMERGENCY">Dr. Nusrat Alam (Hospital B - Emergency Dept)</option>
@@ -267,7 +267,7 @@ export default function PatientPortal() {
                   <select
                     value={purpose}
                     onChange={(e) => setPurpose(e.target.value)}
-                    className="w-full bg-slate-950/80 border border-slate-750 rounded-lg px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/50 transition-all"
+                    className="form-input"
                   >
                     <option value="treatment">Clinical Direct Treatment (treatment)</option>
                     <option value="emergency">Emergency Pre-Authorization (emergency)</option>
@@ -311,7 +311,7 @@ export default function PatientPortal() {
                   <select
                     value={expiryDays}
                     onChange={(e) => setExpiryDays(e.target.value)}
-                    className="bg-slate-950/80 border border-slate-750 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/50 transition-all"
+                    className="form-input !w-auto"
                   >
                     <option value="1">24 Hours (1 Day)</option>
                     <option value="7">7 Days (Standard)</option>
@@ -322,7 +322,7 @@ export default function PatientPortal() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-4 py-2.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-medium text-xs flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer disabled:opacity-50"
+                  className="btn-primary"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   Issue On-Chain Consent

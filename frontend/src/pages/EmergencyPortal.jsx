@@ -141,7 +141,7 @@ export default function EmergencyPortal() {
                       const sel = patientsList.find(p => p.syntheticId === e.target.value);
                       if (sel?.patientRefHash) setPatientRefHash(sel.patientRefHash);
                     }}
-                    className="w-full bg-slate-950/70 border border-rose-900/50 rounded-lg px-3 py-2 text-xs text-rose-300 focus:outline-none focus:border-rose-500"
+                    className="form-input text-rose-300 font-medium border-rose-900/50"
                   >
                     {patientsList.map((p) => (
                       <option key={p.syntheticId} value={p.syntheticId}>
@@ -158,7 +158,7 @@ export default function EmergencyPortal() {
                   type="text"
                   value={patientRefHash}
                   onChange={(e) => setPatientRefHash(e.target.value)}
-                  className="w-full bg-slate-950/80 border border-slate-750 rounded-lg px-3.5 py-2.5 text-xs font-mono text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/40 transition-all"
+                  className="form-input font-mono"
                   required
                 />
               </div>
@@ -168,7 +168,7 @@ export default function EmergencyPortal() {
                 <select
                   value={reasonCode}
                   onChange={(e) => setReasonCode(e.target.value)}
-                  className="w-full bg-slate-950/80 border border-slate-750 rounded-lg px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/40 transition-all"
+                  className="form-input"
                 >
                   <option value="UNCONSCIOUS_SUSPECTED_ANAPHYLAXIS">UNCONSCIOUS_SUSPECTED_ANAPHYLAXIS (Anaphylactic Shock)</option>
                   <option value="TRAUMA_RESUSCITATION">TRAUMA_RESUSCITATION (Severe Polytrauma)</option>
@@ -216,7 +216,7 @@ export default function EmergencyPortal() {
               <button
                 type="submit"
                 disabled={isInvoking || !mfaConfirmed}
-                className="w-full py-2.5 rounded-lg bg-rose-700 hover:bg-rose-600 text-white font-medium text-xs flex items-center justify-center gap-2 shadow-sm transition-colors disabled:opacity-50"
+                className="btn-emergency w-full"
               >
                 <Unlock className="w-4 h-4" />
                 EXECUTE BREAK-GLASS AUTHORIZATION (60 MINS)
