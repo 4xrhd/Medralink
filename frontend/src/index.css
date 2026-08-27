@@ -5,18 +5,47 @@
 @tailwind utilities;
 
 :root {
+  /* Surface & Base Colors */
   --bg-dark: #090D16;
   --bg-card: #0F172A;
   --bg-card-hover: #141E33;
+  --bg-input: rgba(9, 13, 22, 0.85);
+
+  /* Primary Brand Colors */
   --primary-teal: #0D9488;
+  --primary-teal-hover: #0F766E;
+  --primary-teal-light: #14B8A6;
   --primary-blue: #0284C7;
+
+  /* Functional Status Colors */
   --accent-amber: #D97706;
   --accent-red: #E11D48;
+  --accent-red-hover: #BE123C;
   --accent-green: #059669;
+
+  /* Typography Text Colors */
   --text-main: #F8FAFC;
+  --text-secondary: #CBD5E1;
   --text-muted: #94A3B8;
+  --text-subtle: #64748B;
+
+  /* Borders & Dividers */
   --border-light: rgba(255, 255, 255, 0.08);
   --border-subtle: rgba(255, 255, 255, 0.14);
+  --border-active: rgba(20, 184, 166, 0.4);
+
+  /* Elevation Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.35), 0 2px 4px -2px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.45), 0 4px 6px -4px rgba(0, 0, 0, 0.35);
+  --shadow-glow-teal: 0 0 20px -5px rgba(13, 148, 136, 0.3);
+  --shadow-glow-rose: 0 0 20px -5px rgba(225, 29, 72, 0.3);
+
+  /* Border Radii */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
 
   /* Fluid Responsive Typography Scale (clamp-based) */
   --text-2xs: clamp(0.625rem, 0.58rem + 0.2vw, 0.6875rem); /* 10px - 11px */
@@ -55,12 +84,16 @@ code, .font-mono {
   font-family: 'JetBrains Mono', monospace;
 }
 
-/* Custom Minimalist Panels */
+/* ==========================================================================
+   Design System Components & Component Primitives
+   ========================================================================== */
+
+/* Standardized Glass Panels */
 .glass-panel {
   background: rgba(15, 23, 42, 0.72);
   backdrop-filter: blur(12px);
   border: 1px solid var(--border-light);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -73,7 +106,97 @@ code, .font-mono {
   backdrop-filter: blur(16px);
   border: 1px solid var(--border-subtle);
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
+}
+
+/* Standardized Input & Form Controls */
+.form-input {
+  width: 100%;
+  background-color: var(--bg-input);
+  border: 1px solid #27354A;
+  border-radius: var(--radius-md);
+  padding: 0.625rem 0.875rem;
+  font-size: var(--text-xs);
+  color: var(--text-main);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--primary-teal);
+  box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.25);
+}
+
+.form-input::placeholder {
+  color: var(--text-subtle);
+}
+
+/* Standardized Action Buttons */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: var(--primary-teal);
+  color: #FFFFFF;
+  font-weight: 500;
+  font-size: var(--text-xs);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(20, 184, 166, 0.3);
+  transition: all 0.15s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--primary-teal-hover);
+  box-shadow: var(--shadow-glow-teal);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: #1E293B;
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: var(--text-xs);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.15s ease;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: #27354A;
+  color: var(--text-main);
+}
+
+.btn-emergency {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: var(--accent-red);
+  color: #FFFFFF;
+  font-weight: 600;
+  font-size: var(--text-xs);
+  padding: 0.625rem 1.25rem;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(244, 63, 94, 0.4);
+  transition: all 0.15s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-emergency:hover:not(:disabled) {
+  background-color: var(--accent-red-hover);
+  box-shadow: var(--shadow-glow-rose);
 }
 
 .gradient-teal {
@@ -98,9 +221,10 @@ code, .font-mono {
   background-color: #9F1239;
 }
 
+/* Status Badges */
 .badge-status {
   padding: 3px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: var(--text-2xs);
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -133,6 +257,7 @@ code, .font-mono {
   border: 1px solid rgba(225, 29, 72, 0.3);
 }
 
+/* Custom Scrollbars */
 .custom-scrollbar::-webkit-scrollbar {
   width: 5px;
   height: 5px;
