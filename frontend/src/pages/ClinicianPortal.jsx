@@ -23,9 +23,11 @@ import {
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import ErrorBanner from '../components/ErrorBanner';
+import { useClipboard } from '../hooks/useClipboard';
 
 export default function ClinicianPortal() {
   const { activePatient, patientsList, selectPatient, showTransactionReceipt } = useAuth();
+  const { copied: copiedJson, copy: copyClipboard } = useClipboard();
 
   // Access Request Form State
   const [patientRefHash, setPatientRefHash] = useState(
@@ -38,7 +40,6 @@ export default function ClinicianPortal() {
   const [decryptedRecord, setDecryptedRecord] = useState(null);
   const [accessError, setAccessError] = useState(null);
   const [viewMode, setViewMode] = useState('cards'); // 'cards' | 'json'
-  const [copiedJson, setCopiedJson] = useState(false);
 
   // Available Records for Patient
   const [patientRecords, setPatientRecords] = useState([]);
@@ -173,9 +174,7 @@ export default function ClinicianPortal() {
 
   const handleCopyJson = () => {
     if (!decryptedRecord?.fhirBundle) return;
-    navigator.clipboard.writeText(JSON.stringify(decryptedRecord.fhirBundle, null, 2));
-    setCopiedJson(true);
-    setTimeout(() => setCopiedJson(false), 2000);
+    copyClipboard(JSON.stringify(decryptedRecord.fhirBundle, null, 2));
   };
 
   return (

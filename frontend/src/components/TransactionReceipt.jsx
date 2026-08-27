@@ -1,15 +1,13 @@
 import React from 'react';
-import { CheckCircle2, Copy, X, Layers, Clock, Shield } from 'lucide-react';
+import { CheckCircle2, Copy, Check, X, Layers, Clock, Shield } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useClipboard } from '../hooks/useClipboard';
 
 export default function TransactionReceipt() {
   const { recentTransaction, closeReceipt } = useAuth();
+  const { copied, copy } = useClipboard();
 
   if (!recentTransaction) return null;
-
-  const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text);
-  };
 
   return (
     <div className="fixed bottom-6 right-6 z-50 max-w-md w-full animate-bounce-in">
@@ -47,11 +45,11 @@ export default function TransactionReceipt() {
                 {(recentTransaction.txId || '0x...').substring(0, 16)}...
               </span>
               <button
-                onClick={() => copyToClipboard(recentTransaction.txId)}
+                onClick={() => copy(recentTransaction.txId)}
                 title="Copy Tx ID"
                 className="text-slate-400 hover:text-teal-400 transition-colors"
               >
-                <Copy className="w-3 h-3" />
+                {copied ? <Check className="w-3 h-3 text-teal-400" /> : <Copy className="w-3 h-3" />}
               </button>
             </div>
           </div>

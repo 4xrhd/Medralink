@@ -163,3 +163,57 @@ export const Badge = ({
     </span>
   );
 };
+
+export const CopyButton = ({ text, id, label, className = '' }) => {
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        if (text && navigator?.clipboard?.writeText) {
+          navigator.clipboard.writeText(text);
+        }
+      }}
+      title="Copy to clipboard"
+      className={`inline-flex items-center gap-1.5 px-2 py-1 rounded bg-slate-800/90 hover:bg-slate-750 text-slate-300 hover:text-white border border-slate-700/80 text-2xs font-mono transition-all ${className}`}
+    >
+      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+      </svg>
+      {label && <span>{label}</span>}
+    </button>
+  );
+};
+
+export const CryptoProofBox = ({ title, hash, details, className = '', actionLabel = 'Copy' }) => {
+  const [copied, setCopied] = React.useState(false);
+
+  const handleCopy = () => {
+    if (hash && navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(hash);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  return (
+    <div className={`p-4 rounded-lg bg-slate-950/80 border border-slate-800 text-xs font-mono space-y-2 ${className}`}>
+      <div className="flex items-center justify-between text-slate-400 text-2xs">
+        <span className="font-semibold text-teal-400 uppercase tracking-wider">{title}</span>
+        {hash && (
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="flex items-center gap-1 text-slate-400 hover:text-slate-200 transition-colors"
+          >
+            <span>{copied ? 'Copied Hash' : actionLabel}</span>
+          </button>
+        )}
+      </div>
+      <p className="text-teal-300 break-all select-all font-mono leading-relaxed bg-slate-900/90 p-2.5 rounded border border-teal-900/30">
+        {hash || 'Computing cryptographic proof...'}
+      </p>
+      {details && <div className="text-slate-400 text-2xs pt-1 border-t border-slate-800/80">{details}</div>}
+    </div>
+  );
+};
+

@@ -26,6 +26,8 @@ import {
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import ErrorBanner from '../components/ErrorBanner';
+import { useClipboard } from '../hooks/useClipboard';
+import { useCryptoHash } from '../hooks/useCryptoHash';
 
 // Predefined Institutional Provider Presets
 const PROVIDER_PRESETS = [
@@ -94,7 +96,6 @@ export default function AdminPortal() {
   const [org, setOrg] = useState('Org1MSP');
   const [role, setRole] = useState('Clinician');
   const [certSerial, setCertSerial] = useState('CERT-SN-99140');
-  const [computedProviderHash, setComputedProviderHash] = useState('');
   const [isRegisteringProvider, setIsRegisteringProvider] = useState(false);
 
   // Register Patient Form State
@@ -105,35 +106,16 @@ export default function AdminPortal() {
   const [patientName, setPatientName] = useState('Fatema Begum (Synthetic)');
   const [patientBloodGroup, setPatientBloodGroup] = useState('O+');
   const [patientClinicalNote, setPatientClinicalNote] = useState('Stage 3 Chronic Kidney Disease & Hypertension');
-  const [computedPatientRefHash, setComputedPatientRefHash] = useState('');
   const [isRegisteringPatient, setIsRegisteringPatient] = useState(false);
 
   // Demo Bootstrap State
   const [isBootstrapping, setIsBootstrapping] = useState(false);
   const [notification, setNotification] = useState(null);
-  const [copiedKey, setCopiedKey] = useState(null);
 
-  // Client-side SHA-256 helper
-  const computeHash = async (text) => {
-    try {
-      const msgUint8 = new TextEncoder().encode(text);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    } catch {
-      return '';
-    }
-  };
-
-  // Re-compute live hashes when inputs change
-  useEffect(() => {
-    computeHash(providerId).then(h => setComputedProviderHash(h));
-  }, [providerId]);
-
-  useEffect(() => {
-    const salt = 'MEDRALINK_BANGLADESH_SALT_2026_v1';
-    computeHash(`${syntheticId}::${dob}::${salt}`).then(h => setComputedPatientRefHash(h));
-  }, [syntheticId, dob]);
+  // Custom Hooks: Reactive Cryptographic Hashes & Clipboard
+  const { copiedId: copiedKey, copy: copyToClipboard } = useClipboard();
+  const computedProviderHash = useCryptoHash(providerId);
+  const computedPatientRefHash = useCryptoHash(`${syntheticId}::${dob}::MEDRALINK_BANGLADESH_SALT_2026_v1`);
 
   // Fetch registered items and synthetic presets
   const refreshConsortiumData = async () => {
@@ -294,12 +276,6 @@ export default function AdminPortal() {
     } finally {
       setIsBootstrapping(false);
     }
-  };
-
-  const copyToClipboard = (text, key) => {
-    navigator.clipboard?.writeText(text);
-    setCopiedKey(key);
-    setTimeout(() => setCopiedKey(null), 2000);
   };
 
   return (
