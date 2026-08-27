@@ -3,6 +3,7 @@ const router = express.Router();
 const fabricService = require('../services/fabricService');
 const { verifySyntheticIdentity, getSyntheticPatientList } = require('../services/identityAdapter');
 const { requireRole } = require('../middleware/roleGuard');
+const { NotFoundError } = require('../utils/errors');
 
 // GET /patients/synthetic - List available synthetic demo patients
 router.get('/synthetic', (req, res) => {
@@ -45,10 +46,7 @@ router.get('/:patientRefHash', async (req, res, next) => {
   try {
     const patient = await fabricService.getPatientReference(req.params.patientRefHash);
     if (!patient) {
-      return res.status(404).json({
-        resourceType: 'OperationOutcome',
-        issue: [{ severity: 'error', code: 'not-found', diagnostics: 'Patient reference not found on ledger' }],
-      });
+      throw new NotFoundError('Patient reference not found on ledger');
     }
     res.json(patient);
   } catch (err) {

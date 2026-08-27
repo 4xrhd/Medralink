@@ -3,16 +3,14 @@ const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
 const fabricService = require('../services/fabricService');
 const { requireRole } = require('../middleware/roleGuard');
+const { BadRequestError } = require('../utils/errors');
 
 // POST /consents - Grant consent
 router.post('/', requireRole('Patient', 'Admin', 'Clinician'), async (req, res, next) => {
   try {
     const { patientRefHash, grantee, scope, purpose, expiryDays } = req.body;
     if (!patientRefHash || !grantee || !scope) {
-      return res.status(400).json({
-        resourceType: 'OperationOutcome',
-        issue: [{ severity: 'error', code: 'required', diagnostics: 'patientRefHash, grantee, and scope are required' }],
-      });
+      throw new BadRequestError('patientRefHash, grantee, and scope are required');
     }
 
     const consentId = uuidv4();
@@ -53,10 +51,7 @@ router.delete('/:id', requireRole('Patient', 'Admin'), async (req, res, next) =>
     const { patientRefHash } = req.body;
 
     if (!patientRefHash) {
-      return res.status(400).json({
-        resourceType: 'OperationOutcome',
-        issue: [{ severity: 'error', code: 'required', diagnostics: 'patientRefHash is required in body' }],
-      });
+      throw new BadRequestError('patientRefHash is required in body');
     }
 
     const result = await fabricService.revokeConsent(id, patientRefHash);

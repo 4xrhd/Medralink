@@ -43,17 +43,10 @@ func (c *MedralinkContract) RegisterPatientReference(
 		return nil, fmt.Errorf("patient reference '%s' already exists", patientRefHash)
 	}
 
-	if createdAt == "" {
-		txTime, err := ctx.GetStub().GetTxTimestamp()
-		if err == nil && txTime != nil {
-			createdAt = time.Unix(txTime.Seconds, int64(txTime.Nanos)).UTC().Format(time.RFC3339)
-		} else {
-			createdAt = time.Now().UTC().Format(time.RFC3339)
-		}
-	}
+	createdAt = resolveTimestamp(ctx, createdAt)
 
 	patient := &PatientReference{
-		DocType:        "PatientReference",
+		DocType:        DocTypePatientReference,
 		PatientRefHash: patientRefHash,
 		HomeOrg:        homeOrg,
 		CreatedAt:      createdAt,
@@ -92,7 +85,7 @@ func (c *MedralinkContract) RegisterProvider(
 		return nil, err
 	}
 
-	key := fmt.Sprintf("PROV_%s", providerIDHash)
+	key := fmt.Sprintf("%s%s", PrefixProvider, providerIDHash)
 	exists, err := ctx.GetStub().GetState(key)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read provider state: %v", err)
@@ -101,12 +94,10 @@ func (c *MedralinkContract) RegisterProvider(
 		return nil, fmt.Errorf("provider '%s' already registered", providerIDHash)
 	}
 
-	if createdAt == "" {
-		createdAt = time.Now().UTC().Format(time.RFC3339)
-	}
+	createdAt = resolveTimestamp(ctx, createdAt)
 
 	provider := &ProviderReference{
-		DocType:        "ProviderReference",
+		DocType:        DocTypeProviderReference,
 		ProviderIDHash: providerIDHash,
 		Org:            org,
 		Role:           role,
@@ -159,7 +150,7 @@ func (c *MedralinkContract) CreateRecordReference(
 		return nil, fmt.Errorf("patient reference '%s' does not exist on-chain", patientRefHash)
 	}
 
-	key := fmt.Sprintf("REC_%s", recordID)
+	key := fmt.Sprintf("%s%s", PrefixRecord, recordID)
 	exists, err := ctx.GetStub().GetState(key)
 	if err != nil {
 		return nil, err
@@ -168,12 +159,10 @@ func (c *MedralinkContract) CreateRecordReference(
 		return nil, fmt.Errorf("record ID '%s' already exists", recordID)
 	}
 
-	if createdAt == "" {
-		createdAt = time.Now().UTC().Format(time.RFC3339)
-	}
+	createdAt = resolveTimestamp(ctx, createdAt)
 
 	record := &RecordReference{
-		DocType:           "RecordReference",
+		DocType:           DocTypeRecordReference,
 		RecordID:          recordID,
 		PatientRefHash:    patientRefHash,
 		RecordType:        recordType,
@@ -195,7 +184,7 @@ func (c *MedralinkContract) CreateRecordReference(
 	}
 
 	// Secondary composite index for querying patient records
-	indexKey, err := ctx.GetStub().CreateCompositeKey("patient~record", []string{patientRefHash, recordID})
+	indexKey, err := ctx.GetStub().CreateCompositeKey(CompositeKeyPatientRecord, []string{patientRefHash, recordID})
 	if err == nil {
 		_ = ctx.GetStub().PutState(indexKey, []byte{0x00})
 	}
@@ -239,7 +228,7 @@ func (c *MedralinkContract) GrantConsent(
 		return nil, err
 	}
 
-	key := fmt.Sprintf("CONSENT_%s", consentID)
+	key := fmt.Sprintf("%s%s", PrefixConsent, consentID)
 	exists, err := ctx.GetStub().GetState(key)
 	if err != nil {
 		return nil, err
@@ -248,12 +237,10 @@ func (c *MedralinkContract) GrantConsent(
 		return nil, fmt.Errorf("consent ID '%s' already exists", consentID)
 	}
 
-	if createdAt == "" {
-		createdAt = time.Now().UTC().Format(time.RFC3339)
-	}
+	createdAt = resolveTimestamp(ctx, createdAt)
 
 	consent := &Consent{
-		DocType:         "Consent",
+		DocType:         DocTypeConsent,
 		ConsentID:       consentID,
 		PatientRefHash:  patientRefHash,
 		Grantee:         grantee,
@@ -275,7 +262,7 @@ func (c *MedralinkContract) GrantConsent(
 		return nil, fmt.Errorf("failed to save consent: %v", err)
 	}
 
-	indexKey, err := ctx.GetStub().CreateCompositeKey("patient~consent", []string{patientRefHash, consentID})
+	indexKey, err := ctx.GetStub().CreateCompositeKey(CompositeKeyPatientConsent, []string{patientRefHash, consentID})
 	if err == nil {
 		_ = ctx.GetStub().PutState(indexKey, []byte{0x00})
 	}
@@ -297,7 +284,7 @@ func (c *MedralinkContract) RevokeConsent(
 		return nil, fmt.Errorf("consentID and patientRefHash are required")
 	}
 
-	key := fmt.Sprintf("CONSENT_%s", consentID)
+	key := fmt.Sprintf("%s%s", PrefixConsent, consentID)
 	consentBytes, err := ctx.GetStub().GetState(key)
 	if err != nil {
 		return nil, err
@@ -352,7 +339,7 @@ func (c *MedralinkContract) RequestAccess(
 		return nil, err
 	}
 
-	key := fmt.Sprintf("CONSENT_%s", consentID)
+	key := fmt.Sprintf("%s%s", PrefixConsent, consentID)
 	consentBytes, err := ctx.GetStub().GetState(key)
 	if err != nil {
 		return nil, err
@@ -391,7 +378,7 @@ func (c *MedralinkContract) RequestAccess(
 	// 3. Check expiration
 	now := time.Now().UTC()
 	txTime, err := ctx.GetStub().GetTxTimestamp()
-	if err == nil && txTime != nil {
+	if err == nil && txTime != nil && txTime.Seconds > 0 {
 		now = time.Unix(txTime.Seconds, int64(txTime.Nanos)).UTC()
 	}
 	expired, err := IsExpired(consent.ExpiryTimestamp, now)
@@ -463,12 +450,10 @@ func (c *MedralinkContract) LogAccess(
 		return nil, err
 	}
 
-	if timestamp == "" {
-		timestamp = time.Now().UTC().Format(time.RFC3339)
-	}
+	timestamp = resolveTimestamp(ctx, timestamp)
 
 	event := &AccessEvent{
-		DocType:        "AccessEvent",
+		DocType:        DocTypeAccessEvent,
 		RequestID:      requestID,
 		PatientRefHash: patientRefHash,
 		AccessorHash:   accessorHash,
@@ -483,13 +468,13 @@ func (c *MedralinkContract) LogAccess(
 		return nil, err
 	}
 
-	key := fmt.Sprintf("AUDIT_%s", requestID)
+	key := fmt.Sprintf("%s%s", PrefixAudit, requestID)
 	err = ctx.GetStub().PutState(key, eventJSON)
 	if err != nil {
 		return nil, fmt.Errorf("failed to save access audit event: %v", err)
 	}
 
-	indexKey, err := ctx.GetStub().CreateCompositeKey("patient~audit", []string{patientRefHash, requestID})
+	indexKey, err := ctx.GetStub().CreateCompositeKey(CompositeKeyPatientAudit, []string{patientRefHash, requestID})
 	if err == nil {
 		_ = ctx.GetStub().PutState(indexKey, []byte{0x00})
 	}
@@ -533,7 +518,7 @@ func (c *MedralinkContract) InvokeEmergencyAccess(
 		return nil, err
 	}
 
-	key := fmt.Sprintf("EMERGENCY_%s", emergencyID)
+	key := fmt.Sprintf("%s%s", PrefixEmergency, emergencyID)
 	exists, err := ctx.GetStub().GetState(key)
 	if err != nil {
 		return nil, err
@@ -542,12 +527,10 @@ func (c *MedralinkContract) InvokeEmergencyAccess(
 		return nil, fmt.Errorf("emergency event ID '%s' already exists", emergencyID)
 	}
 
-	if createdAt == "" {
-		createdAt = time.Now().UTC().Format(time.RFC3339)
-	}
+	createdAt = resolveTimestamp(ctx, createdAt)
 
 	emergencyEvent := &EmergencyAccessEvent{
-		DocType:         "EmergencyAccessEvent",
+		DocType:         DocTypeEmergencyAccessEvent,
 		EmergencyID:     emergencyID,
 		PatientRefHash:  patientRefHash,
 		ClinicianIDHash: clinicianIDHash,
@@ -571,15 +554,15 @@ func (c *MedralinkContract) InvokeEmergencyAccess(
 		return nil, fmt.Errorf("failed to save emergency event: %v", err)
 	}
 
-	indexKey, err := ctx.GetStub().CreateCompositeKey("patient~emergency", []string{patientRefHash, emergencyID})
+	indexKey, err := ctx.GetStub().CreateCompositeKey(CompositeKeyPatientEmergency, []string{patientRefHash, emergencyID})
 	if err == nil {
 		_ = ctx.GetStub().PutState(indexKey, []byte{0x00})
 	}
 
 	// Auto-log the emergency access attempt into the immutable audit trail
-	auditKey := fmt.Sprintf("AUDIT_EMG_%s", emergencyID)
+	auditKey := fmt.Sprintf("%sEMG_%s", PrefixAudit, emergencyID)
 	auditLog := &AccessEvent{
-		DocType:        "AccessEvent",
+		DocType:        DocTypeAccessEvent,
 		RequestID:      fmt.Sprintf("EMG_%s", emergencyID),
 		PatientRefHash: patientRefHash,
 		AccessorHash:   clinicianIDHash,
@@ -617,7 +600,7 @@ func (c *MedralinkContract) ReviewEmergencyAccess(
 		return nil, err
 	}
 
-	key := fmt.Sprintf("EMERGENCY_%s", emergencyID)
+	key := fmt.Sprintf("%s%s", PrefixEmergency, emergencyID)
 	eventBytes, err := ctx.GetStub().GetState(key)
 	if err != nil {
 		return nil, err
@@ -631,9 +614,7 @@ func (c *MedralinkContract) ReviewEmergencyAccess(
 		return nil, err
 	}
 
-	if reviewedAt == "" {
-		reviewedAt = time.Now().UTC().Format(time.RFC3339)
-	}
+	reviewedAt = resolveTimestamp(ctx, reviewedAt)
 
 	event.ReviewStatus = reviewStatus
 	event.ReviewerHash = auditorIDHash
@@ -682,7 +663,7 @@ func (c *MedralinkContract) GetRecordReference(
 	ctx contractapi.TransactionContextInterface,
 	recordID string,
 ) (*RecordReference, error) {
-	key := fmt.Sprintf("REC_%s", recordID)
+	key := fmt.Sprintf("%s%s", PrefixRecord, recordID)
 	recordBytes, err := ctx.GetStub().GetState(key)
 	if err != nil {
 		return nil, err
@@ -702,7 +683,7 @@ func (c *MedralinkContract) GetConsent(
 	ctx contractapi.TransactionContextInterface,
 	consentID string,
 ) (*Consent, error) {
-	key := fmt.Sprintf("CONSENT_%s", consentID)
+	key := fmt.Sprintf("%s%s", PrefixConsent, consentID)
 	consentBytes, err := ctx.GetStub().GetState(key)
 	if err != nil {
 		return nil, err
@@ -722,7 +703,7 @@ func (c *MedralinkContract) GetEmergencyEvent(
 	ctx contractapi.TransactionContextInterface,
 	emergencyID string,
 ) (*EmergencyAccessEvent, error) {
-	key := fmt.Sprintf("EMERGENCY_%s", emergencyID)
+	key := fmt.Sprintf("%s%s", PrefixEmergency, emergencyID)
 	eventBytes, err := ctx.GetStub().GetState(key)
 	if err != nil {
 		return nil, err
@@ -742,30 +723,15 @@ func (c *MedralinkContract) GetAccessHistory(
 	ctx contractapi.TransactionContextInterface,
 	patientRefHash string,
 ) ([]*AccessEvent, error) {
-	iterator, err := ctx.GetStub().GetStateByPartialCompositeKey("patient~audit", []string{patientRefHash})
+	rawList, err := getStatesByPartialCompositeKey(ctx, CompositeKeyPatientAudit, []string{patientRefHash}, PrefixAudit)
 	if err != nil {
 		return nil, err
 	}
-	defer iterator.Close()
-
 	var events []*AccessEvent
-	for iterator.HasNext() {
-		response, err := iterator.Next()
-		if err != nil {
-			return nil, err
-		}
-		_, compositeKeyParts, err := ctx.GetStub().SplitCompositeKey(response.Key)
-		if err != nil || len(compositeKeyParts) < 2 {
-			continue
-		}
-		requestID := compositeKeyParts[1]
-		eventKey := fmt.Sprintf("AUDIT_%s", requestID)
-		eventBytes, err := ctx.GetStub().GetState(eventKey)
-		if err == nil && eventBytes != nil {
-			var event AccessEvent
-			if err := json.Unmarshal(eventBytes, &event); err == nil {
-				events = append(events, &event)
-			}
+	for _, raw := range rawList {
+		var event AccessEvent
+		if err := json.Unmarshal(raw, &event); err == nil {
+			events = append(events, &event)
 		}
 	}
 	return events, nil
@@ -776,30 +742,15 @@ func (c *MedralinkContract) GetRecordsForPatient(
 	ctx contractapi.TransactionContextInterface,
 	patientRefHash string,
 ) ([]*RecordReference, error) {
-	iterator, err := ctx.GetStub().GetStateByPartialCompositeKey("patient~record", []string{patientRefHash})
+	rawList, err := getStatesByPartialCompositeKey(ctx, CompositeKeyPatientRecord, []string{patientRefHash}, PrefixRecord)
 	if err != nil {
 		return nil, err
 	}
-	defer iterator.Close()
-
 	var records []*RecordReference
-	for iterator.HasNext() {
-		response, err := iterator.Next()
-		if err != nil {
-			return nil, err
-		}
-		_, compositeKeyParts, err := ctx.GetStub().SplitCompositeKey(response.Key)
-		if err != nil || len(compositeKeyParts) < 2 {
-			continue
-		}
-		recordID := compositeKeyParts[1]
-		recKey := fmt.Sprintf("REC_%s", recordID)
-		recBytes, err := ctx.GetStub().GetState(recKey)
-		if err == nil && recBytes != nil {
-			var rec RecordReference
-			if err := json.Unmarshal(recBytes, &rec); err == nil {
-				records = append(records, &rec)
-			}
+	for _, raw := range rawList {
+		var rec RecordReference
+		if err := json.Unmarshal(raw, &rec); err == nil {
+			records = append(records, &rec)
 		}
 	}
 	return records, nil
@@ -810,30 +761,15 @@ func (c *MedralinkContract) GetConsentsForPatient(
 	ctx contractapi.TransactionContextInterface,
 	patientRefHash string,
 ) ([]*Consent, error) {
-	iterator, err := ctx.GetStub().GetStateByPartialCompositeKey("patient~consent", []string{patientRefHash})
+	rawList, err := getStatesByPartialCompositeKey(ctx, CompositeKeyPatientConsent, []string{patientRefHash}, PrefixConsent)
 	if err != nil {
 		return nil, err
 	}
-	defer iterator.Close()
-
 	var consents []*Consent
-	for iterator.HasNext() {
-		response, err := iterator.Next()
-		if err != nil {
-			return nil, err
-		}
-		_, compositeKeyParts, err := ctx.GetStub().SplitCompositeKey(response.Key)
-		if err != nil || len(compositeKeyParts) < 2 {
-			continue
-		}
-		consentID := compositeKeyParts[1]
-		conKey := fmt.Sprintf("CONSENT_%s", consentID)
-		conBytes, err := ctx.GetStub().GetState(conKey)
-		if err == nil && conBytes != nil {
-			var con Consent
-			if err := json.Unmarshal(conBytes, &con); err == nil {
-				consents = append(consents, &con)
-			}
+	for _, raw := range rawList {
+		var con Consent
+		if err := json.Unmarshal(raw, &con); err == nil {
+			consents = append(consents, &con)
 		}
 	}
 	return consents, nil
@@ -844,32 +780,16 @@ func (c *MedralinkContract) GetEmergencyEventsForPatient(
 	ctx contractapi.TransactionContextInterface,
 	patientRefHash string,
 ) ([]*EmergencyAccessEvent, error) {
-	iterator, err := ctx.GetStub().GetStateByPartialCompositeKey("patient~emergency", []string{patientRefHash})
+	rawList, err := getStatesByPartialCompositeKey(ctx, CompositeKeyPatientEmergency, []string{patientRefHash}, PrefixEmergency)
 	if err != nil {
 		return nil, err
 	}
-	defer iterator.Close()
-
 	var events []*EmergencyAccessEvent
-	for iterator.HasNext() {
-		response, err := iterator.Next()
-		if err != nil {
-			return nil, err
-		}
-		_, compositeKeyParts, err := ctx.GetStub().SplitCompositeKey(response.Key)
-		if err != nil || len(compositeKeyParts) < 2 {
-			continue
-		}
-		emergencyID := compositeKeyParts[1]
-		emgKey := fmt.Sprintf("EMERGENCY_%s", emergencyID)
-		emgBytes, err := ctx.GetStub().GetState(emgKey)
-		if err == nil && emgBytes != nil {
-			var ev EmergencyAccessEvent
-			if err := json.Unmarshal(emgBytes, &ev); err == nil {
-				events = append(events, &ev)
-			}
+	for _, raw := range rawList {
+		var ev EmergencyAccessEvent
+		if err := json.Unmarshal(raw, &ev); err == nil {
+			events = append(events, &ev)
 		}
 	}
 	return events, nil
 }
-

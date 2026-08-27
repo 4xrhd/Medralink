@@ -4,16 +4,14 @@ const { v4: uuidv4 } = require('uuid');
 const fabricService = require('../services/fabricService');
 const { sha256 } = require('../services/hashService');
 const { requireRole } = require('../middleware/roleGuard');
+const { BadRequestError } = require('../utils/errors');
 
 // POST /emergency/invoke - Emergency Break-Glass Invocation
 router.post('/invoke', requireRole('Emergency', 'Clinician', 'Admin'), async (req, res, next) => {
   try {
     const { patientRefHash, reasonCode, scope, expiryMinutes } = req.body;
     if (!patientRefHash || !reasonCode || !scope) {
-      return res.status(400).json({
-        resourceType: 'OperationOutcome',
-        issue: [{ severity: 'error', code: 'required', diagnostics: 'patientRefHash, reasonCode, and scope are required' }],
-      });
+      throw new BadRequestError('patientRefHash, reasonCode, and scope are required');
     }
 
     const emergencyId = uuidv4();
@@ -54,10 +52,7 @@ router.post('/review', requireRole('Auditor', 'Admin'), async (req, res, next) =
   try {
     const { emergencyId, reviewStatus, findingsNote } = req.body;
     if (!emergencyId || !reviewStatus) {
-      return res.status(400).json({
-        resourceType: 'OperationOutcome',
-        issue: [{ severity: 'error', code: 'required', diagnostics: 'emergencyId and reviewStatus (APPROPRIATE/INAPPROPRIATE) are required' }],
-      });
+      throw new BadRequestError('emergencyId and reviewStatus (APPROPRIATE/INAPPROPRIATE) are required');
     }
 
     const auditorIdHash = sha256(req.user.id || 'auditor_user');

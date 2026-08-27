@@ -3,16 +3,14 @@ const router = express.Router();
 const fabricService = require('../services/fabricService');
 const { sha256 } = require('../services/hashService');
 const { requireRole } = require('../middleware/roleGuard');
+const { BadRequestError } = require('../utils/errors');
 
 // POST /providers/register - Hospital Admin registers authorized provider
 router.post('/register', requireRole('Admin'), async (req, res, next) => {
   try {
     const { providerId, org, role, certSerial } = req.body;
     if (!providerId || !org || !role) {
-      return res.status(400).json({
-        resourceType: 'OperationOutcome',
-        issue: [{ severity: 'error', code: 'required', diagnostics: 'providerId, org, and role are required' }],
-      });
+      throw new BadRequestError('providerId, org, and role are required');
     }
 
     const providerIdHash = sha256(providerId);
