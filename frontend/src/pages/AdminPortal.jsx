@@ -18,7 +18,7 @@ export default function AdminPortal() {
   const [patientHomeOrg, setPatientHomeOrg] = useState('Org1MSP');
   const [isRegisteringPatient, setIsRegisteringPatient] = useState(false);
 
-  const [isBootstrapping, setIsBootstrapping] = useState(false);
+  const [notification, setNotification] = useState(null);
 
   React.useEffect(() => {
     const refreshStatus = async () => {
@@ -41,6 +41,7 @@ export default function AdminPortal() {
   const handleRegisterProvider = async (e) => {
     e.preventDefault();
     setIsRegisteringProvider(true);
+    setNotification(null);
     try {
       const res = await api.registerProvider({
         providerId,
@@ -53,9 +54,9 @@ export default function AdminPortal() {
         txId: res.txId,
         blockNumber: res.blockNumber,
       });
-      alert(`Provider registered! Hash: ${res.providerIdHash}`);
+      setNotification({ type: 'success', message: `Provider '${providerId}' registered successfully! ID Hash: ${res.providerIdHash?.substring(0, 16)}...` });
     } catch (err) {
-      alert(`Registration failed: ${err.message}`);
+      setNotification({ type: 'error', message: `Registration failed: ${err.message}` });
     } finally {
       setIsRegisteringProvider(false);
     }
@@ -64,6 +65,7 @@ export default function AdminPortal() {
   const handleRegisterPatient = async (e) => {
     e.preventDefault();
     setIsRegisteringPatient(true);
+    setNotification(null);
     try {
       const res = await api.registerPatient({
         syntheticId,
@@ -76,9 +78,9 @@ export default function AdminPortal() {
         txId: res.txId,
         blockNumber: res.blockNumber,
       });
-      alert(`Patient registered! Hash: ${res.patientRefHash}`);
+      setNotification({ type: 'success', message: `Patient reference registered! Pseudonym Hash: ${res.patientRefHash?.substring(0, 16)}...` });
     } catch (err) {
-      alert(`Patient registration failed: ${err.message}`);
+      setNotification({ type: 'error', message: `Patient registration failed: ${err.message}` });
     } finally {
       setIsRegisteringPatient(false);
     }
@@ -86,6 +88,7 @@ export default function AdminPortal() {
 
   const handleBootstrapDemo = async () => {
     setIsBootstrapping(true);
+    setNotification(null);
     try {
       const res = await api.bootstrapDemo();
       showTransactionReceipt({
@@ -95,9 +98,9 @@ export default function AdminPortal() {
       });
       const updatedStatus = await api.getNetworkStatus();
       setNetworkStatus(updatedStatus);
-      alert('Demo data initialized successfully!');
+      setNotification({ type: 'success', message: 'Demo consortium data initialized successfully with patients, providers, records, and active consents!' });
     } catch (err) {
-      alert(`Bootstrap failed: ${err.message}`);
+      setNotification({ type: 'error', message: `Bootstrap failed: ${err.message}` });
     } finally {
       setIsBootstrapping(false);
     }
@@ -126,6 +129,30 @@ export default function AdminPortal() {
           Bootstrap Demo State (1-Click)
         </button>
       </div>
+
+      {/* Inline Notification Banner */}
+      {notification && (
+        <div className={`p-4 rounded-xl border flex items-center justify-between text-xs animate-fade-in ${
+          notification.type === 'success'
+            ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-300'
+            : 'bg-rose-950/40 border-rose-500/30 text-rose-300'
+        }`}>
+          <div className="flex items-center gap-2.5">
+            {notification.type === 'success' ? (
+              <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+            ) : (
+              <Shield className="w-4 h-4 text-rose-400 shrink-0" />
+            )}
+            <span>{notification.message}</span>
+          </div>
+          <button
+            onClick={() => setNotification(null)}
+            className="text-slate-400 hover:text-slate-200 ml-4 font-mono text-[11px]"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Network Consortium Status Overview */}
       <div className="glass-panel p-6 border-slate-800 space-y-4">
