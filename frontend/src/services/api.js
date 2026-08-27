@@ -40,10 +40,12 @@ export const api = {
 
   // Patients
   getSyntheticPatients: (options) => request('/patients/synthetic', options),
+  getAllPatients: (options) => request('/patients', options),
   registerPatient: (body, options) => request('/patients/register', { method: 'POST', body, ...options }),
   getPatient: (patientRefHash, options) => request(`/patients/${patientRefHash}`, options),
 
   // Providers
+  getAllProviders: (options) => request('/providers', options),
   registerProvider: (body, options) => request('/providers/register', { method: 'POST', body, ...options }),
 
   // Records

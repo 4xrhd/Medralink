@@ -431,6 +431,26 @@ class FabricLedgerService extends EventEmitter {
     return this.worldState.get(`PROV_${providerIdHash}`) || null;
   }
 
+  async getAllProviders() {
+    const results = [];
+    for (const [key, value] of this.worldState.entries()) {
+      if (key.startsWith('PROV_') && value.docType === 'ProviderReference') {
+        results.push(value);
+      }
+    }
+    return results;
+  }
+
+  async getAllPatients() {
+    const results = [];
+    for (const [key, value] of this.worldState.entries()) {
+      if (value.docType === 'PatientReference') {
+        results.push(value);
+      }
+    }
+    return results;
+  }
+
   async getRecordReference(recordId) {
     return this.worldState.get(`REC_${recordId}`) || null;
   }

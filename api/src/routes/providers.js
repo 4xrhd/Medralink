@@ -19,4 +19,23 @@ router.post('/register', requireRole('Admin'), async (req, res, next) => {
   }
 });
 
+// GET /providers or GET /providers/all - List registered authorized providers on ledger
+router.get('/', async (req, res, next) => {
+  try {
+    const providers = await providerService.getAllProviders();
+    res.json(providers);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/all', async (req, res, next) => {
+  try {
+    const providers = await providerService.getAllProviders();
+    res.json(providers);
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

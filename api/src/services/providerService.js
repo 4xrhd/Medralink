@@ -42,6 +42,10 @@ class ProviderService {
       blockNumber: result.blockNumber,
     };
   }
+
+  async getAllProviders() {
+    return fabricService.getAllProviders();
+  }
 }
 
 module.exports = new ProviderService();

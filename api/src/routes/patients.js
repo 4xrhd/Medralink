@@ -20,6 +20,25 @@ router.post('/register', requireRole('Admin', 'Clinician', 'Patient'), async (re
   }
 });
 
+// GET /patients or GET /patients/all - Query all registered patient references on ledger
+router.get('/', async (req, res, next) => {
+  try {
+    const patients = await patientService.getAllPatients();
+    res.json(patients);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/all', async (req, res, next) => {
+  try {
+    const patients = await patientService.getAllPatients();
+    res.json(patients);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /patients/:patientRefHash - Query patient info on ledger
 router.get('/:patientRefHash', async (req, res, next) => {
   try {

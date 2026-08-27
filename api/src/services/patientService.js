@@ -64,6 +64,10 @@ class PatientService {
     }
     return patient;
   }
+
+  async getAllPatients() {
+    return fabricService.getAllPatients();
+  }
 }
 
 module.exports = new PatientService();
