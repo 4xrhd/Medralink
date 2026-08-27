@@ -73,15 +73,23 @@ Onboards a patient via the Mock Identity Verification Adapter without storing ra
   }
   ```
 
+#### `GET /patients` / `GET /patients/all`
+Queries the list of all registered pseudonymous patient references currently anchored on the Hyperledger Fabric ledger.
+- **Required Role:** Any authorized role
+
+#### `GET /patients/synthetic`
+Returns the catalog of Bangladesh Porichoy gateway simulation profiles with synthetic IDs, dates of birth, and home custodial facilities for rapid prototyping.
+- **Required Role:** Any authorized role
+
 #### `GET /patients/:patientRefHash`
 Queries on-chain patient reference state and registered metadata.
 
 ---
 
-### 3. Provider Credential Registration
+### 3. Provider Credential Registration & Ledger Roster
 
 #### `POST /providers/register`
-Anchors authorized healthcare provider X.509 cryptographic credentials.
+Anchors authorized healthcare provider X.509 cryptographic credentials (`RegisterProvider`).
 - **Required Role:** `Admin`
 - **Request Body:**
   ```json
@@ -91,6 +99,10 @@ Anchors authorized healthcare provider X.509 cryptographic credentials.
     "role": "Clinician"
   }
   ```
+
+#### `GET /providers` / `GET /providers/all`
+Queries all authorized healthcare provider credentials registered on the consortium ledger, including X.509 cert serial numbers, roles, and status.
+- **Required Role:** Any authorized role
 
 ---
 
