@@ -57,13 +57,22 @@ process.on('uncaughtException', (err) => {
 
 let server = null;
 if (require.main === module) {
-  server = app.listen(PORT, () => {
+  const demoService = require('./services/demoService');
+  server = app.listen(PORT, async () => {
     console.log(`=======================================================`);
     console.log(` 🏥 MedraLink HL7 FHIR & Blockchain REST API Gateway`);
     console.log(` 🌐 Server listening on http://localhost:${PORT}`);
     console.log(` ⛓️  Hyperledger Fabric Channel: medralink-main`);
     console.log(` 🛡️  Privacy Mode: Zero PII on-chain (AES-256-GCM off-chain)`);
     console.log(`=======================================================`);
+
+    // Auto-bootstrap consortium state with synthetic patients & providers
+    try {
+      const boot = await demoService.bootstrapDemo();
+      console.log(` [Bootstrap] Initialized ${boot.patientsCount} synthetic patient records & providers on ledger.`);
+    } catch (e) {
+      console.warn(` [Bootstrap] Auto-bootstrap notice:`, e.message);
+    }
   });
 
   const gracefulShutdown = (signal) => {

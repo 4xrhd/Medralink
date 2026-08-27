@@ -32,6 +32,19 @@ class RecordAccessService {
       encryptedPayload,
     });
 
+    // Ensure patient reference is anchored on-chain before creating record
+    const patientExists = await fabricService.getPatientReference(patientRefHash);
+    if (!patientExists) {
+      const { getSyntheticPatientList } = require('./identityAdapter');
+      const syntheticList = getSyntheticPatientList();
+      const matched = syntheticList.find(p => p.patientRefHash === patientRefHash);
+      await fabricService.registerPatientReference(
+        patientRefHash,
+        matched?.homeOrg || custodialOrg || user?.mspId || 'Org1MSP',
+        'AUTO_REGISTERED'
+      ).catch(() => {});
+    }
+
     // 4. Anchor cryptographic hashes on Hyperledger Fabric ledger
     const anchorResult = await fabricService.createRecordReference(
       recordId,

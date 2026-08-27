@@ -15,6 +15,19 @@ class ConsentService {
     const days = parseInt(expiryDays, 10) || 7;
     const expiryTimestamp = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
 
+    // Ensure patient reference is registered on-chain before granting consent
+    const patientExists = await fabricService.getPatientReference(patientRefHash);
+    if (!patientExists) {
+      const { getSyntheticPatientList } = require('./identityAdapter');
+      const syntheticList = getSyntheticPatientList();
+      const matched = syntheticList.find(p => p.patientRefHash === patientRefHash);
+      await fabricService.registerPatientReference(
+        patientRefHash,
+        matched?.homeOrg || 'Org1MSP',
+        'AUTO_REGISTERED'
+      ).catch(() => {});
+    }
+
     const result = await fabricService.grantConsent(
       consentId,
       patientRefHash,
