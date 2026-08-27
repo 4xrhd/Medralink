@@ -1,18 +1,22 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
-  --bg-dark: #08131E;
-  --bg-card: #0F2236;
-  --bg-card-hover: #162E48;
-  --primary-teal: #00D2B4;
-  --primary-blue: #0EA5E9;
-  --accent-amber: #F59E0B;
-  --accent-red: #EF4444;
-  --accent-green: #10B981;
-  --text-main: #F1F5F9;
+  --bg-dark: #090D16;
+  --bg-card: #0F172A;
+  --bg-card-hover: #141E33;
+  --primary-teal: #0D9488;
+  --primary-blue: #0284C7;
+  --accent-amber: #D97706;
+  --accent-red: #E11D48;
+  --accent-green: #059669;
+  --text-main: #F8FAFC;
   --text-muted: #94A3B8;
   --border-light: rgba(255, 255, 255, 0.08);
-  --border-glow: rgba(0, 210, 180, 0.25);
+  --border-subtle: rgba(255, 255, 255, 0.14);
 }
 
 * {
@@ -22,102 +26,105 @@
 }
 
 body {
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   background-color: var(--bg-dark);
   color: var(--text-main);
   min-height: 100vh;
   overflow-x: hidden;
+  letter-spacing: -0.01em;
 }
 
 code, .font-mono {
   font-family: 'JetBrains Mono', monospace;
 }
 
-/* Custom Utilities */
+/* Custom Minimalist Panels */
 .glass-panel {
-  background: rgba(15, 34, 54, 0.75);
+  background: rgba(15, 23, 42, 0.72);
   backdrop-filter: blur(12px);
   border: 1px solid var(--border-light);
-  border-radius: 16px;
+  border-radius: 12px;
 }
 
 .glass-panel-glow {
-  background: rgba(15, 34, 54, 0.85);
+  background: rgba(15, 23, 42, 0.88);
   backdrop-filter: blur(16px);
-  border: 1px solid var(--border-glow);
-  box-shadow: 0 8px 32px 0 rgba(0, 210, 180, 0.08);
-  border-radius: 16px;
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+  border-radius: 12px;
 }
 
 .gradient-teal {
-  background: linear-gradient(135deg, #00D2B4 0%, #0EA5E9 100%);
+  background-color: #0D9488;
+  color: #FFFFFF;
+}
+
+.gradient-teal:hover {
+  background-color: #0F766E;
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #00D2B4 0%, #38BDF8 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #F8FAFC;
 }
 
 .gradient-emergency {
-  background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+  background-color: #BE123C;
+  color: #FFFFFF;
+}
+
+.gradient-emergency:hover {
+  background-color: #9F1239;
 }
 
 .badge-status {
-  padding: 4px 10px;
-  border-radius: 9999px;
-  font-size: 0.75rem;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.7rem;
   font-weight: 600;
-  letter-spacing: 0.025em;
+  letter-spacing: 0.02em;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
 .badge-granted {
-  background: rgba(16, 185, 129, 0.15);
+  background: rgba(16, 185, 129, 0.08);
   color: #34D399;
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  border: 1px solid rgba(16, 185, 129, 0.22);
 }
 
 .badge-revoked {
-  background: rgba(239, 68, 68, 0.15);
-  color: #F87171;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: rgba(244, 63, 94, 0.08);
+  color: #FB7185;
+  border: 1px solid rgba(244, 63, 94, 0.22);
 }
 
 .badge-pending {
-  background: rgba(245, 158, 11, 0.15);
-  color: #FBBF24;
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: rgba(245, 158, 11, 0.08);
+  color: #FCD34D;
+  border: 1px solid rgba(245, 158, 11, 0.22);
 }
 
 .badge-emergency {
-  background: rgba(239, 68, 68, 0.2);
-  color: #FCA5A5;
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  animation: pulse-red 2s infinite;
-}
-
-@keyframes pulse-red {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  background: rgba(225, 29, 72, 0.12);
+  color: #FDA4AF;
+  border: 1px solid rgba(225, 29, 72, 0.3);
 }
 
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(15, 34, 54, 0.5);
+  background: rgba(15, 23, 42, 0.5);
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.12);
   border-radius: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 210, 180, 0.4);
+  background: rgba(255, 255, 255, 0.24);
 }

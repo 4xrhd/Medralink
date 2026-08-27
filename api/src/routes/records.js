@@ -20,8 +20,8 @@ router.post('/', requireRole('Clinician', 'Admin'), async (req, res, next) => {
   }
 });
 
-// GET /records/:id - Retrieve and decrypt clinical record (Requires valid consent check)
-router.get('/:id', requireRole('Clinician', 'Emergency', 'Admin'), async (req, res, next) => {
+// GET /records/:id - Retrieve and decrypt clinical record (Requires valid consent or patient/emergency authorization)
+router.get('/:id', requireRole('Clinician', 'Emergency', 'Admin', 'Patient'), async (req, res, next) => {
   try {
     const { id } = req.params;
     const { consentId, emergencyId, purpose } = req.query;

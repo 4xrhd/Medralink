@@ -9,6 +9,7 @@ const {
   ONTOLOGY_MAP,
 } = require('../services/agentsService');
 const fabricService = require('../services/fabricService');
+const { BadRequestError } = require('../utils/errors');
 
 /**
  * Agentic AI Multi-Agent API Router
@@ -61,19 +62,19 @@ router.get('/ontology', (req, res) => {
 });
 
 // POST /agents/orchestrate - Master DAG Planner
-router.post('/orchestrate', (req, res, next) => {
+router.post('/orchestrate', async (req, res, next) => {
   try {
     const { workflowType, inputPayload } = req.body;
     if (!workflowType) {
-      return res.status(400).json({ error: 'workflowType is required (e.g. CLINICAL_INTAKE_AND_RECORD_ANCHOR, EMERGENCY_TRAUMA_BREAK_GLASS, FORENSIC_COMPLIANCE_SCAN)' });
+      throw new BadRequestError('workflowType is required (e.g. CLINICAL_INTAKE_AND_RECORD_ANCHOR, EMERGENCY_TRAUMA_BREAK_GLASS, FORENSIC_COMPLIANCE_SCAN)');
     }
 
     const payload = inputPayload || {};
     // If not provided in payload, inject current fabric state for audit scans
     if (workflowType === 'FORENSIC_COMPLIANCE_SCAN') {
-      payload.blocks = fabricService.blocks;
+      payload.blocks = await fabricService.getBlocks();
       payload.txHistory = fabricService.txHistory;
-      payload.emergencyEvents = fabricService.emergencyEvents;
+      payload.emergencyEvents = await fabricService.getAllEmergencyEvents();
     }
 
     const result = runMedraLinkOrchestrator({ workflowType, inputPayload: payload });
@@ -88,7 +89,7 @@ router.post('/fhir-normalize', (req, res, next) => {
   try {
     const { patientRefHash, rawNotes, vitals, allergyText, medicationText, labResults } = req.body;
     if (!patientRefHash) {
-      return res.status(400).json({ error: 'patientRefHash is required' });
+      throw new BadRequestError('patientRefHash is required');
     }
     const result = runFHIRAgent({ patientRefHash, rawNotes, vitals, allergyText, medicationText, labResults });
     res.json(result);
@@ -102,7 +103,7 @@ router.post('/consent-evaluate', (req, res, next) => {
   try {
     const { patientRefHash, requesterId, requesterRole, requestedScope, purpose, activeConsent, emergencyContext } = req.body;
     if (!patientRefHash) {
-      return res.status(400).json({ error: 'patientRefHash is required' });
+      throw new BadRequestError('patientRefHash is required');
     }
     const result = runConsentAgent({ patientRefHash, requesterId, requesterRole, requestedScope, purpose, activeConsent, emergencyContext });
     res.json(result);
@@ -116,7 +117,7 @@ router.post('/emergency-triage', (req, res, next) => {
   try {
     const { clinicianId, patientRefHash, traumaVitals, declaredReasonCode, locationOrg } = req.body;
     if (!clinicianId || !patientRefHash) {
-      return res.status(400).json({ error: 'clinicianId and patientRefHash are required' });
+      throw new BadRequestError('clinicianId and patientRefHash are required');
     }
     const result = runEmergencyTriageAgent({ clinicianId, patientRefHash, traumaVitals, declaredReasonCode, locationOrg });
     res.json(result);
@@ -126,13 +127,14 @@ router.post('/emergency-triage', (req, res, next) => {
 });
 
 // POST /agents/audit-scan - Invoke AuditAgent
-router.post('/audit-scan', (req, res, next) => {
+router.post('/audit-scan', async (req, res, next) => {
   try {
     const { filterPatientRefHash } = req.body || {};
+    const emergencyEvents = await fabricService.getAllEmergencyEvents();
     const result = runAuditAgent({
-      blocks: fabricService.blocks,
+      blocks: await fabricService.getBlocks(),
       txHistory: fabricService.txHistory,
-      emergencyEvents: fabricService.emergencyEvents,
+      emergencyEvents,
       filterPatientRefHash,
     });
     res.json(result);

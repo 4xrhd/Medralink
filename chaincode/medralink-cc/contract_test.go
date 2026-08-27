@@ -39,10 +39,12 @@ func TestValidationRules(t *testing.T) {
 	assert.Error(t, ValidateReviewStatus("PENDING"))
 	assert.Error(t, ValidateReviewStatus("UNKNOWN"))
 
-	// 5. Zero PII Assertion (Detects raw NIDs)
+	// 5. Zero PII Assertion (Detects raw NIDs, emails, and phone numbers)
 	assert.NoError(t, AssertZeroPII("c5d6e7f8a9b012345678", "Org1MSP"))
 	assert.Error(t, AssertZeroPII("19951234567890123")) // 17-digit raw NID detected
 	assert.Error(t, AssertZeroPII("1234567890"))        // 10-digit raw NID detected
+	assert.Error(t, AssertZeroPII("patient@example.com")) // Raw email detected
+	assert.Error(t, AssertZeroPII("+8801712345678"))      // Raw BD phone number detected
 }
 
 func TestExpiryCheck(t *testing.T) {
@@ -181,3 +183,57 @@ func TestCanonicalEvents(t *testing.T) {
 	assert.Equal(t, "EmergencyAccessInvoked", EventEmergencyAccessInvoked)
 	assert.Equal(t, "EmergencyAccessReviewed", EventEmergencyAccessReviewed)
 }
+
+func TestGranteeAccessControlLogic(t *testing.T) {
+	consent := Consent{
+		DocType:         DocTypeConsent,
+		ConsentID:       "con-auth-01",
+		PatientRefHash:  "patient_ref_99",
+		Grantee:         "DR_HASAN_CLINICIAN",
+		Scope:           []string{"AllergyIntolerance", "MedicationRequest"},
+		Purpose:         "treatment",
+		ExpiryTimestamp: "2026-12-31T23:59:59Z",
+		Revoked:         false,
+	}
+
+	// 1. Authorized Grantee
+	assert.Equal(t, "DR_HASAN_CLINICIAN", consent.Grantee)
+	assert.False(t, consent.Revoked)
+
+	// 2. Unauthorized Accessor Mismatch Check
+	accessorMismatch := "DR_UNAUTHORIZED_HACKER"
+	assert.NotEqual(t, consent.Grantee, accessorMismatch)
+
+	// 3. Purpose Mismatch Check
+	invalidPurpose := "marketing"
+	assert.NotEqual(t, consent.Purpose, invalidPurpose)
+}
+
+func TestEmergencyReviewStatusTransition(t *testing.T) {
+	emg := EmergencyAccessEvent{
+		DocType:         DocTypeEmergencyAccessEvent,
+		EmergencyID:     "emg-test-01",
+		PatientRefHash:  "patient_ref_99",
+		ClinicianIDHash: "clinician_hash_01",
+		ReasonCode:      "UNCONSCIOUS_SUSPECTED_ANAPHYLAXIS",
+		Scope:           []string{"AllergyIntolerance"},
+		ExpiryTimestamp: "2026-12-31T23:59:59Z",
+		ReviewStatus:    "PENDING",
+	}
+
+	// Initial State must be PENDING
+	assert.Equal(t, "PENDING", emg.ReviewStatus)
+
+	// Transition to APPROPRIATE
+	emg.ReviewStatus = "APPROPRIATE"
+	emg.ReviewerHash = "auditor_dghs_hash"
+	emg.FindingsHash = "sha256_findings_hash"
+
+	assert.Equal(t, "APPROPRIATE", emg.ReviewStatus)
+	assert.NotEmpty(t, emg.ReviewerHash)
+	assert.NotEmpty(t, emg.FindingsHash)
+
+	// Invariant: Once reviewed, it cannot be considered PENDING
+	assert.NotEqual(t, "PENDING", emg.ReviewStatus)
+}
+

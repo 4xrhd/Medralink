@@ -139,27 +139,27 @@ export default function AgenticAIPortal() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Header Banner */}
-      <div className="glass-panel p-6 sm:p-8 bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950/40 border border-indigo-500/30">
+      <div className="glass-panel p-6 border-slate-800 bg-slate-900/90">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shadow-lg shadow-indigo-500/20">
-                <Bot className="w-6 h-6 animate-pulse" />
+              <div className="w-10 h-10 rounded-lg bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400">
+                <Bot className="w-5 h-5" />
               </div>
               <div>
-                <h1 className="text-2xl font-extrabold text-white tracking-tight">
+                <h1 className="text-xl font-bold text-slate-100 tracking-tight">
                   MedraLink Agentic AI Multi-Agent Orchestration Layer
                 </h1>
-                <p className="text-sm text-indigo-300 font-medium">
+                <p className="text-xs text-slate-400">
                   5 Autonomous Specialized Agents • Directed Acyclic Graph (DAG) • 3-Tier Memory Hierarchy
                 </p>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950/80 border border-indigo-500/40 text-xs font-mono text-indigo-300">
-            <Cpu className="w-4 h-4 text-indigo-400" />
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-950/80 border border-slate-800 text-xs font-mono text-slate-300">
+            <Cpu className="w-3.5 h-3.5 text-teal-400" />
             <span>Multi-Agent Engine: ONLINE</span>
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping ml-1" />
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 ml-1" />
           </div>
         </div>
       </div>
@@ -168,7 +168,7 @@ export default function AgenticAIPortal() {
       <AgentOverviewGrid />
 
       {/* Navigation Tabs */}
-      <div className="flex border-b border-slate-800 space-x-4">
+      <div className="flex border-b border-slate-800 space-x-2">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           return (
@@ -178,13 +178,13 @@ export default function AgenticAIPortal() {
                 setActiveTab(tab.id);
                 setAgentOutput(null);
               }}
-              className={`flex items-center gap-2 pb-3 px-2 border-b-2 text-sm font-semibold transition-all cursor-pointer ${
+              className={`flex items-center gap-2 pb-2.5 px-3 border-b-2 text-xs font-medium transition-colors cursor-pointer ${
                 activeTab === tab.id
-                  ? 'border-indigo-400 text-indigo-400'
+                  ? 'border-teal-500 text-teal-300 font-semibold'
                   : 'border-transparent text-slate-400 hover:text-slate-200'
               }`}
             >
-              <Icon className="w-4 h-4" />
+              <Icon className="w-3.5 h-3.5" />
               <span>{tab.label}</span>
             </button>
           );

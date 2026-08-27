@@ -40,6 +40,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const switchRole = (role) => {
+    localStorage.setItem('medralink_demo_role', role);
     setCurrentRole(role);
   };
 

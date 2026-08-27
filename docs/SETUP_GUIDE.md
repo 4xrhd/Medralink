@@ -55,3 +55,19 @@ go test -v ./...
 cd ../../api
 npm test
 ```
+
+---
+
+## 🔑 Demo Personas & Login Credentials
+
+The interactive web portal includes an instant role switcher in the top navigation bar. For API testing, supply the `x-demo-role` HTTP header.
+
+| Role | Name / Persona | Synthetic ID / Account ID | MSP Organization | X.509 Certificate OU |
+|---|---|---|---|---|
+| **Patient** | Rahim Chowdhury | `BD-HEALTH-994821` (DOB: `1992-05-14`) | `Org1MSP` (Hospital A) | `OU=Patient` |
+| **Clinician** | Dr. Hasan Mahmud | `clinician_dr_hasan` (`DR_HASAN_CLINICIAN`) | `Org1MSP` (Hospital A) | `OU=Clinician` |
+| **Emergency** | Dr. Nusrat Alam | `emergency_dr_alam` (`DR-EMERGENCY-02`) | `Org2MSP` (Hospital B ED) | `OU=Emergency` |
+| **Auditor** | DGHS Inspector | `auditor_dghs_01` (`AUDITOR-DGHS-01`) | `OrgAuditorMSP` (DGHS) | `OU=Auditor` (Read-Only) |
+| **Admin** | System Admin | `admin_hospital_a` | `Org1MSP` (Hospital A) | `OU=Admin` |
+| **Agentic AI** | Multi-Agent Orchestrator | `MedraLinkOrchestrator` | `DAG Orchestrator` | `Autonomous Multi-Agent` |
+

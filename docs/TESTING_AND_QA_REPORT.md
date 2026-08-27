@@ -5,7 +5,7 @@
 **Track:** Student Category — Blockchain / Agentic AI Track  
 **Master Agent Manual:** [`AGENTS.md`](file:///home/tr/Downloads/MedraLink/AGENTS.md)  
 **Test Coverage:** Smart Contract (Go), API Gateway (Node.js), Frontend SPA (React.js), Agentic AI Multi-Agent Engine  
-**Result:** 100% Automated Tests Passing (0 Failures, 0 Regressions)  
+**Result:** 100% Automated Tests Passing (25 Automated Tests: 6 Go Chaincode + 19 Node.js Integration Tests, 0 Failures, 0 Regressions)  
 
 ---
 
@@ -43,8 +43,12 @@
   --- PASS: TestDataModelSerialization (0.00s)
   === RUN   TestCanonicalEvents
   --- PASS: TestCanonicalEvents (0.00s)
+  === RUN   TestGranteeAccessControlLogic
+  --- PASS: TestGranteeAccessControlLogic (0.00s)
+  === RUN   TestEmergencyReviewStatusTransition
+  --- PASS: TestEmergencyReviewStatusTransition (0.00s)
   PASS
-  ok  	medralink-cc	0.011s
+  ok  	medralink-cc	0.009s
   ```
 
 ### Key Invariants Verified:
@@ -54,6 +58,8 @@
 4. `AssertZeroPII`: Detected and rejected 10-, 13-, and 17-digit raw national ID patterns.
 5. `IsExpired`: Expired timestamps fail closed automatically.
 6. `Canonical Events & Models`: Full serialization and deserialization validation.
+7. `Grantee Access Control`: Enforces BOLA protection by checking `accessorHash` matches `consent.Grantee`.
+8. `Review Status Non-Repudiation`: Prevents double-review overwrites once reviewed by DGHS auditor.
 
 ---
 
@@ -65,23 +71,27 @@
   > medralink-api-gateway@1.0.0 test
   > node --test tests/*.test.js
 
-  ✔ 1. Health Check Endpoint (46.79ms)
-  ✔ 2. Network Status Endpoint (6.36ms)
-  ✔ 3. Synthetic Patient Registration (Mock Identity Adapter) (16.74ms)
-  ✔ 4. Provider Registration (RegisterProvider on Ledger) (6.45ms)
-  ✔ 5. Off-Chain Encrypted Record Creation & On-Chain Hash Anchoring (10.12ms)
-  ✔ 6. Full Consent -> Access -> Decryption -> Revoke -> Denied Access Lifecycle (29.43ms)
-  ✔ 7. Emergency Break-Glass Invocation and Auditor Review (17.19ms)
-  ✔ 8. Demo Consortium State Bootstrap Endpoint (7.25ms)
-  ✔ 9. Agentic AI Status & Ontology Endpoints (5.79ms)
-  ✔ 10. FHIRAgent Semantic Ontology Normalization (3.73ms)
-  ✔ 11. ConsentAgent Dynamic Policy Evaluation (6.74ms)
-  ✔ 12. EmergencyTriageAgent Trauma Assessment & Token Issuance (5.87ms)
-  ✔ 13. MedraLinkOrchestrator Master DAG Execution (4.87ms)
-  ✔ 14. AuditAgent Forensic Ledger Scan & Anomaly Detection (4.12ms)
-  ✔ 15. Patient Emergency Break-Glass History Query (9.65ms)
+  ✔ 1. Health Check Endpoint (43ms)
+  ✔ 2. Network Status Endpoint (5ms)
+  ✔ 3. Synthetic Patient Registration (Mock Identity Adapter) (15ms)
+  ✔ 4. Provider Registration (RegisterProvider on Ledger) (10ms)
+  ✔ 5. Off-Chain Encrypted Record Creation & On-Chain Hash Anchoring (11ms)
+  ✔ 6. Full Consent -> Access -> Decryption -> Revoke -> Denied Access Lifecycle (31ms)
+  ✔ 7. Emergency Break-Glass Invocation and Auditor Review (17ms)
+  ✔ 8. Demo Consortium State Bootstrap Endpoint (4ms)
+  ✔ 9. Agentic AI Status & Ontology Endpoints (6ms)
+  ✔ 10. FHIRAgent Semantic Ontology Normalization (7ms)
+  ✔ 11. ConsentAgent Dynamic Policy Evaluation (9ms)
+  ✔ 12. EmergencyTriageAgent Trauma Assessment & Token Issuance (4ms)
+  ✔ 13. MedraLinkOrchestrator Master DAG Execution (4ms)
+  ✔ 14. AuditAgent Forensic Ledger Scan & Anomaly Detection (4ms)
+  ✔ 15. Patient Emergency Break-Glass History Query (12ms)
+  ✔ 16. Complete 6-Resource FHIR R4 Bundle Validation (0.5ms)
+  ✔ 17. Real-Time Blockchain SSE Event Stream Connection (4ms)
+  ✔ 18. Standalone /access/request Verification Flow (15ms)
+  ✔ 19. Tamper Detection & Cryptographic Hash Anchor Verification (14ms)
 
-  ℹ tests 15, pass 15, fail 0, duration: 340ms (100% Passing)
+  ℹ tests 19, pass 19, fail 0, duration: 367ms (100% Passing)
   ```
 
 ---

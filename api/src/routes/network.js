@@ -1,11 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const fabricService = require('../services/fabricService');
-const { verifySyntheticIdentity } = require('../services/identityAdapter');
-const { encryptFHIRBundle } = require('../services/encryptionService');
-const { createPatientFHIRBundle } = require('../services/fhirService');
-const { sha256 } = require('../services/hashService');
-const { v4: uuidv4 } = require('uuid');
+const demoService = require('../services/demoService');
 
 // GET /health - Public health check
 router.get('/health', async (req, res) => {
@@ -27,65 +23,66 @@ router.get('/status', async (req, res) => {
   res.json(status);
 });
 
-const storageService = require('../services/storageService');
+// GET /events - Real-time Server-Sent Events (SSE) stream for blockchain blocks & transactions
+router.get('/events', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders?.();
+
+  // Send initial connection event
+  res.write(`data: ${JSON.stringify({ type: 'CONNECTED', channel: 'medralink-main', timestamp: new Date().toISOString() })}\n\n`);
+
+  // Periodic heartbeat every 20s to prevent proxy/NAT timeout
+  const heartbeatTimer = setInterval(() => {
+    try {
+      res.write(': keep-alive\n\n');
+    } catch {
+      clearInterval(heartbeatTimer);
+    }
+  }, 20000);
+
+  const onBlock = (block) => {
+    try {
+      res.write(`data: ${JSON.stringify({ type: 'BLOCK', block })}\n\n`);
+    } catch {
+      // Stream closed
+    }
+  };
+
+  const onTx = (tx) => {
+    try {
+      res.write(`data: ${JSON.stringify({ type: 'TRANSACTION', tx })}\n\n`);
+    } catch {
+      // Stream closed
+    }
+  };
+
+  const onChaincodeEvent = (event) => {
+    try {
+      res.write(`data: ${JSON.stringify({ type: 'CHAINCODE_EVENT', event })}\n\n`);
+    } catch {
+      // Stream closed
+    }
+  };
+
+  fabricService.on('block', onBlock);
+  fabricService.on('transaction', onTx);
+  fabricService.on('chaincodeEvent', onChaincodeEvent);
+
+  req.on('close', () => {
+    clearInterval(heartbeatTimer);
+    fabricService.off('block', onBlock);
+    fabricService.off('transaction', onTx);
+    fabricService.off('chaincodeEvent', onChaincodeEvent);
+  });
+});
 
 // POST /demo/bootstrap - One-click automated setup for demo
 router.post('/demo/bootstrap', async (req, res, next) => {
   try {
-    // Step 1: Register Patient A
-    const patientA = verifySyntheticIdentity('BD-HEALTH-994821', '1992-05-14');
-    await fabricService.registerPatientReference(patientA.patientRefHash, 'Org1MSP').catch(() => {});
-
-    // Step 2: Register Providers
-    await fabricService.registerProvider(sha256('DR_HASAN_HOSPITAL_A'), 'Org1MSP', 'Clinician', 'CERT-8812').catch(() => {});
-    await fabricService.registerProvider(sha256('DR_ALAM_EMERGENCY_B'), 'Org2MSP', 'Emergency', 'CERT-9943').catch(() => {});
-    await fabricService.registerProvider(sha256('AUDITOR_DGHS_OBSERVER'), 'OrgAuditorMSP', 'Auditor', 'CERT-0001').catch(() => {});
-
-    // Step 3: Create Sample Clinical Record
-    const recordId = uuidv4();
-    const fhirBundle = createPatientFHIRBundle(patientA.patientRefHash);
-    const enc = encryptFHIRBundle(fhirBundle);
-    const storagePointer = `s3://vault/records/${recordId}.enc`;
-    const ptrHash = sha256(storagePointer);
-    
-    storageService.saveRecord(recordId, {
-      patientRefHash: patientA.patientRefHash,
-      storagePointer,
-      encryptedPayload: enc,
-    });
-
-    await fabricService.createRecordReference(
-      recordId,
-      patientA.patientRefHash,
-      'AllergyIntolerance',
-      enc.recordHash,
-      ptrHash,
-      'Org1MSP',
-      sha256('DR_HASAN_HOSPITAL_A')
-    ).catch(() => {});
-
-    // Step 4: Grant Consent
-    const consentId = uuidv4();
-    const expiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-    await fabricService.grantConsent(
-      consentId,
-      patientA.patientRefHash,
-      sha256('DR_HASAN_HOSPITAL_A'),
-      ['AllergyIntolerance', 'MedicationRequest'],
-      'treatment',
-      expiry
-    ).catch(() => {});
-
-    res.json({
-      status: 'BOOTSTRAPPED',
-      message: 'Demo dataset initialized on blockchain',
-      patientRefHash: patientA.patientRefHash,
-      syntheticHealthId: patientA.syntheticHealthId,
-      sampleRecordId: recordId,
-      sampleConsentId: consentId,
-      txId: fabricService.txHistory[fabricService.txHistory.length - 1]?.txId || uuidv4(),
-      blockNumber: fabricService.blocks.length - 1,
-    });
+    const result = await demoService.bootstrapDemo();
+    res.json(result);
   } catch (err) {
     next(err);
   }

@@ -109,11 +109,23 @@ func IsExpired(expiryStr string, now time.Time) (bool, error) {
 // rawNIDPattern detects unhashed Bangladesh National ID patterns (10, 13, or 17 digit continuous numbers)
 var rawNIDPattern = regexp.MustCompile(`\b\d{10}\b|\b\d{13}\b|\b\d{17}\b`)
 
+// rawEmailPattern detects unhashed plain email addresses
+var rawEmailPattern = regexp.MustCompile(`(?i)[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}`)
+
+// rawPhonePattern detects unhashed Bangladeshi and international phone numbers
+var rawPhonePattern = regexp.MustCompile(`(?:\+?8801[3-9]\d{8}|\b01[3-9]\d{8}\b)`)
+
 // AssertZeroPII ensures no unhashed personal identifier is passed in on-chain arguments
 func AssertZeroPII(fields ...string) error {
 	for _, f := range fields {
 		if rawNIDPattern.MatchString(f) {
 			return fmt.Errorf("privacy violation: potential raw national identity number detected in argument. Only cryptographic hashes are permitted on-chain")
+		}
+		if rawEmailPattern.MatchString(f) {
+			return fmt.Errorf("privacy violation: potential raw email address detected in argument. Only cryptographic hashes are permitted on-chain")
+		}
+		if rawPhonePattern.MatchString(f) {
+			return fmt.Errorf("privacy violation: potential raw phone number detected in argument. Only cryptographic hashes are permitted on-chain")
 		}
 	}
 	return nil

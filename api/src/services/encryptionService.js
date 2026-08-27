@@ -36,17 +36,21 @@ function encryptFHIRBundle(fhirBundle, masterKeyHex = AES_MASTER_KEY) {
  * Decrypts an off-chain encrypted FHIR payload using AES-256-GCM
  */
 function decryptFHIRBundle(encryptedPayload, masterKeyHex = AES_MASTER_KEY) {
-  const key = Buffer.from(masterKeyHex, 'hex');
-  const iv = Buffer.from(encryptedPayload.iv, 'hex');
-  const authTag = Buffer.from(encryptedPayload.authTag, 'hex');
+  try {
+    const key = Buffer.from(masterKeyHex, 'hex');
+    const iv = Buffer.from(encryptedPayload.iv, 'hex');
+    const authTag = Buffer.from(encryptedPayload.authTag, 'hex');
 
-  const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
-  decipher.setAuthTag(authTag);
+    const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+    decipher.setAuthTag(authTag);
 
-  let decrypted = decipher.update(encryptedPayload.ciphertext, 'hex', 'utf8');
-  decrypted += decipher.final('utf8');
+    let decrypted = decipher.update(encryptedPayload.ciphertext, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
 
-  return JSON.parse(decrypted);
+    return JSON.parse(decrypted);
+  } catch (err) {
+    throw new Error(`AES-256-GCM Decryption failed: ${err.message}`);
+  }
 }
 
 module.exports = {

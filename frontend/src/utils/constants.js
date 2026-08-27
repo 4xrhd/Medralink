@@ -16,5 +16,6 @@ export const DEMO_CONSTANTS = {
     { value: 'MedicationRequest', label: 'Medication Orders & Prescriptions' },
     { value: 'Observation', label: 'Lab Results & Vitals' },
     { value: 'AllergyIntolerance', label: 'Allergies & Adverse Reactions' },
+    { value: 'DiagnosticReport', label: 'Diagnostic & Pathology Reports' },
   ],
 };

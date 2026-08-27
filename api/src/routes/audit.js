@@ -1,11 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const fabricService = require('../services/fabricService');
+const { BadRequestError } = require('../utils/errors');
 
 // GET /audit/:patientRefHash - Get immutable access audit history for patient
 router.get('/:patientRefHash', async (req, res, next) => {
   try {
     const { patientRefHash } = req.params;
+    if (!patientRefHash) {
+      throw new BadRequestError('patientRefHash is required');
+    }
     const history = await fabricService.getAuditHistory(patientRefHash);
 
     res.json({

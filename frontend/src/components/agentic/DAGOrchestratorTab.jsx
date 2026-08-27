@@ -33,8 +33,8 @@ export default function DAGOrchestratorTab({
   return (
     <div className="space-y-6">
       <div className="glass-panel p-6 space-y-6">
-        <h2 className="text-lg font-bold text-white flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-indigo-400" />
+        <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-teal-400" />
           Select Multi-Agent Directed Acyclic Graph (DAG) Scenario
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -42,40 +42,40 @@ export default function DAGOrchestratorTab({
             <button
               key={wf.id}
               onClick={() => setSelectedWorkflow(wf.id)}
-              className={`p-4 rounded-xl border text-left transition-all ${
+              className={`p-4 rounded-lg border text-left transition-all ${
                 selectedWorkflow === wf.id
-                  ? 'bg-indigo-500/10 border-indigo-500/50 shadow-lg shadow-indigo-500/10 ring-1 ring-indigo-500/40'
-                  : 'bg-slate-900/50 border-slate-800 hover:border-slate-700'
+                  ? 'bg-slate-800 border-teal-500/50 shadow-sm'
+                  : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
               }`}
             >
-              <h4 className="text-sm font-bold text-white mb-1">{wf.title}</h4>
-              <div className="text-[11px] font-mono text-indigo-400 font-semibold mb-2">{wf.agents}</div>
-              <p className="text-xs text-slate-400">{wf.desc}</p>
+              <h4 className="text-xs font-bold text-slate-100 mb-1">{wf.title}</h4>
+              <div className="text-[11px] font-mono text-teal-400 font-medium mb-1.5">{wf.agents}</div>
+              <p className="text-xs text-slate-400 leading-relaxed">{wf.desc}</p>
             </button>
           ))}
         </div>
 
         {/* Input preview */}
-        <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
-          <label className="text-xs font-mono text-slate-400 block">
+        <div className="bg-slate-950/70 p-3.5 rounded-lg border border-slate-800 space-y-1.5">
+          <label className="text-[11px] font-mono text-slate-400 block">
             Working Clinical Context / Patient Hash Input:
           </label>
-          <div className="text-xs font-mono text-teal-300 break-all">{patientHash}</div>
+          <div className="text-xs font-mono text-slate-200 break-all">{patientHash}</div>
         </div>
 
         <button
           onClick={onRunDAG}
           disabled={loading}
-          className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-all cursor-pointer disabled:opacity-50"
+          className="w-full py-2.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-medium text-xs flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer disabled:opacity-50"
         >
           {loading ? (
             <>
-              <RefreshCw className="w-4 h-4 animate-spin" />
+              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
               <span>Executing Multi-Agent DAG Workflow...</span>
             </>
           ) : (
             <>
-              <Sparkles className="w-4 h-4" />
+              <Sparkles className="w-3.5 h-3.5" />
               <span>Dispatch & Execute DAG Workflow</span>
             </>
           )}

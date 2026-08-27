@@ -4,7 +4,7 @@ const { encryptFHIRBundle, decryptFHIRBundle } = require('./encryptionService');
 const { createPatientFHIRBundle } = require('./fhirService');
 const { sha256 } = require('./hashService');
 const storageService = require('./storageService');
-const { BadRequestError, ForbiddenError, NotFoundError } = require('../utils/errors');
+const { AppError, BadRequestError, ForbiddenError, NotFoundError } = require('../utils/errors');
 
 class RecordAccessService {
   /**
@@ -94,8 +94,19 @@ class RecordAccessService {
       );
 
       if (!accessCheck.allowed) {
-        throw new ForbiddenError(`Access denied: ${accessCheck.reason} [Status: ${accessCheck.status}]`);
+        throw new ForbiddenError(`Access denied: ${accessCheck.reason} [Status: ${accessCheck.status}]`, accessCheck.status);
       }
+    } else if (user.role === 'Patient') {
+      // Patient accessing their own personal health record
+      const requestId = uuidv4();
+      auditLogResult = await fabricService.logAccess(
+        requestId,
+        recordRef.patientRefHash,
+        user.id || 'patient_owner',
+        recordRef.recordType,
+        'patient-self-view',
+        'GRANTED_PATIENT_OWNER'
+      );
     } else if (user.role === 'Emergency') {
       if (emergencyId) {
         const emgEvent = fabricService.worldState.get(`EMERGENCY_${emergencyId}`);
@@ -124,6 +135,16 @@ class RecordAccessService {
     const stored = storageService.getRecord(recordId);
     if (!stored) {
       throw new NotFoundError('Encrypted off-chain payload not found in custodial repository');
+    }
+
+    // Verify cryptographic integrity against on-chain recordHash anchor
+    const computedHash = sha256(stored.encryptedPayload.ciphertext);
+    if (computedHash !== recordRef.recordHash) {
+      throw new AppError(
+        'Off-chain ciphertext integrity violation: SHA-256 hash mismatch with on-chain recordHash anchor',
+        500,
+        'integrity-violation'
+      );
     }
 
     // Decrypt FHIR bundle

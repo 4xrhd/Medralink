@@ -362,3 +362,142 @@ test('15. Patient Emergency Break-Glass History Query', async () => {
   assert.ok(data.count >= 1);
   assert.equal(data.events[0].reasonCode, 'UNCONSCIOUS_TRAUMA_PATIENT');
 });
+
+test('16. Complete 6-Resource FHIR R4 Bundle Validation', async () => {
+  const { createPatientFHIRBundle } = require('../src/services/fhirService');
+  const bundle = createPatientFHIRBundle('hash_test_patient_123', { gender: 'male', birthDate: '1990-01-01' });
+
+  assert.equal(bundle.resourceType, 'Bundle');
+  assert.equal(bundle.type, 'collection');
+  assert.equal(bundle.entry.length, 6);
+
+  const resourceTypes = bundle.entry.map((e) => e.resource.resourceType);
+  assert.ok(resourceTypes.includes('Patient'), 'Must include Patient');
+  assert.ok(resourceTypes.includes('AllergyIntolerance'), 'Must include AllergyIntolerance');
+  assert.ok(resourceTypes.includes('MedicationRequest'), 'Must include MedicationRequest');
+  assert.ok(resourceTypes.includes('Condition'), 'Must include Condition');
+  assert.ok(resourceTypes.includes('Observation'), 'Must include Observation');
+  assert.ok(resourceTypes.includes('DiagnosticReport'), 'Must include DiagnosticReport');
+});
+
+test('17. Real-Time Blockchain SSE Event Stream Connection', async () => {
+  const url = `${baseUrl}/events`;
+  const res = await fetch(url);
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get('content-type'), 'text/event-stream');
+
+  const reader = res.body.getReader();
+  const { value } = await reader.read();
+  const text = new TextDecoder().decode(value);
+  assert.ok(text.includes('CONNECTED'));
+  assert.ok(text.includes('medralink-main'));
+  await reader.cancel();
+});
+
+test('18. Standalone /access/request Verification Flow', async () => {
+  const pat = await apiRequest('/patients/register', {
+    method: 'POST',
+    body: { syntheticId: 'BD-HEALTH-556677', dob: '1995-03-21' },
+  });
+  const patientRefHash = pat.data.patientRefHash;
+
+  const conRes = await apiRequest('/consents', {
+    method: 'POST',
+    role: 'Patient',
+    body: {
+      patientRefHash,
+      grantee: 'DR_HASAN_CLINICIAN',
+      scope: ['AllergyIntolerance'],
+      purpose: 'treatment',
+      expiryDays: 3,
+    },
+  });
+  const consentId = conRes.data.consentId;
+
+  // Granted request
+  const accessRes = await apiRequest('/access/request', {
+    method: 'POST',
+    role: 'Clinician',
+    body: {
+      patientRefHash,
+      consentId,
+      scope: 'AllergyIntolerance',
+      purpose: 'treatment',
+    },
+  });
+  assert.equal(accessRes.status, 200);
+  assert.equal(accessRes.data.status, 'GRANTED');
+  assert.equal(accessRes.data.verificationStatus, 'GRANTED');
+
+  // Denied request (invalid purpose)
+  const deniedRes = await apiRequest('/access/request', {
+    method: 'POST',
+    role: 'Clinician',
+    body: {
+      patientRefHash,
+      consentId,
+      scope: 'AllergyIntolerance',
+      purpose: 'marketing',
+    },
+  });
+  assert.equal(deniedRes.status, 403);
+});
+
+test('19. Tamper Detection & Cryptographic Hash Anchor Verification', async () => {
+  const storageService = require('../src/services/storageService');
+
+  // 1. Register patient
+  const pat = await apiRequest('/patients/register', {
+    method: 'POST',
+    body: { syntheticId: 'BD-HEALTH-129933', dob: '1990-08-14' },
+  });
+  const patientRefHash = pat.data.patientRefHash;
+
+  // 2. Create encrypted record
+  const recRes = await apiRequest('/records', {
+    method: 'POST',
+    role: 'Clinician',
+    body: {
+      patientRefHash,
+      recordType: 'AllergyIntolerance',
+    },
+  });
+  const recordId = recRes.data.recordId;
+
+  // 3. Grant consent
+  const conRes = await apiRequest('/consents', {
+    method: 'POST',
+    role: 'Patient',
+    body: {
+      patientRefHash,
+      grantee: 'DR_HASAN_CLINICIAN',
+      scope: ['AllergyIntolerance'],
+      purpose: 'treatment',
+      expiryDays: 7,
+    },
+  });
+  const consentId = conRes.data.consentId;
+
+  // 4. Simulate off-chain custodial tampering by modifying stored ciphertext
+  const stored = storageService.getRecord(recordId);
+  assert.ok(stored);
+  const originalCiphertext = stored.encryptedPayload.ciphertext;
+  // Corrupt 1 hex character
+  stored.encryptedPayload.ciphertext = originalCiphertext.substring(0, originalCiphertext.length - 2) + 'ff';
+
+  // 5. Attempt retrieval - Must be rejected due to hash mismatch
+  const tamperedFetch = await apiRequest(`/records/${recordId}?consentId=${consentId}&purpose=treatment`, {
+    role: 'Clinician',
+  });
+  assert.equal(tamperedFetch.status, 500);
+  assert.ok(
+    tamperedFetch.data.issue[0].diagnostics.includes('integrity violation') ||
+    tamperedFetch.data.issue[0].diagnostics.includes('mismatch')
+  );
+
+  // Restore for cleanliness
+  stored.encryptedPayload.ciphertext = originalCiphertext;
+});
+
+
+

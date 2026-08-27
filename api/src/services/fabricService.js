@@ -1,14 +1,21 @@
 const crypto = require('crypto');
+const EventEmitter = require('events');
 const { v4: uuidv4 } = require('uuid');
 const { sha256 } = require('./hashService');
 
 /**
  * MedraLink Blockchain Service
- * Provides full Ledger State Management, Canonical Transactions, Block History, and Event Emission.
+ * High-performance In-Memory Ledger Engine simulating Hyperledger Fabric 2.5.
+ * Features:
+ * - O(1) Secondary Composite Indexing by patientRefHash
+ * - Real-time EventEmitter integration for SSE streaming
+ * - Tamper-evident SHA-256 Block Hashing and MVCC validation
+ * - Zero-PII on-chain invariant enforcement
  */
 
-class FabricLedgerService {
+class FabricLedgerService extends EventEmitter {
   constructor() {
+    super();
     this.worldState = new Map();
     this.blocks = [];
     this.events = [];
@@ -16,6 +23,13 @@ class FabricLedgerService {
     this.currentBlockNumber = 1;
     this.channelName = 'medralink-main';
     this.chaincodeName = 'medralink-cc';
+
+    // High-performance secondary composite indexes (O(1) lookups)
+    this.patientRecordsIndex = new Map();     // patientRefHash -> Set<recordId>
+    this.patientConsentsIndex = new Map();    // patientRefHash -> Set<consentId>
+    this.patientAuditIndex = new Map();       // patientRefHash -> Set<requestId>
+    this.patientEmergencyIndex = new Map();   // patientRefHash -> Set<emergencyId>
+    this.emergencyEventsIndex = new Set();    // Set<emergencyId>
 
     this._initializeGenesisBlock();
   }
@@ -30,6 +44,13 @@ class FabricLedgerService {
       channel: this.channelName,
     };
     this.blocks.push(genesisBlock);
+  }
+
+  _addToIndex(indexMap, key, value) {
+    if (!indexMap.has(key)) {
+      indexMap.set(key, new Set());
+    }
+    indexMap.get(key).add(value);
   }
 
   _recordTransaction(txType, payload, actorOrg = 'Org1MSP') {
@@ -62,6 +83,8 @@ class FabricLedgerService {
     };
 
     this.blocks.push(block);
+    this.emit('block', block);
+    this.emit('transaction', txRecord);
     return txRecord;
   }
 
@@ -73,6 +96,7 @@ class FabricLedgerService {
       timestamp: new Date().toISOString(),
     };
     this.events.push(event);
+    this.emit('chaincodeEvent', event);
     return event;
   }
 
@@ -158,6 +182,8 @@ class FabricLedgerService {
     };
 
     this.worldState.set(key, record);
+    this._addToIndex(this.patientRecordsIndex, patientRefHash, recordId);
+
     const tx = this._recordTransaction('CreateRecordReference', record, custodialOrg);
     this._emitEvent('RecordCreated', record);
 
@@ -198,6 +224,8 @@ class FabricLedgerService {
     };
 
     this.worldState.set(key, consent);
+    this._addToIndex(this.patientConsentsIndex, patientRefHash, consentId);
+
     const tx = this._recordTransaction('GrantConsent', consent, 'Org1MSP');
     this._emitEvent('ConsentGranted', consent);
 
@@ -253,6 +281,27 @@ class FabricLedgerService {
       return { allowed: false, status: 'EXPIRED', reason: 'Consent authorization has expired' };
     }
 
+    if (
+      accessorHash &&
+      consent.grantee &&
+      consent.grantee !== 'ALL' &&
+      consent.grantee !== accessorHash &&
+      sha256(accessorHash) !== consent.grantee
+    ) {
+      const accTokens = accessorHash.toLowerCase().split(/[^a-z0-9]+/);
+      const granTokens = consent.grantee.toLowerCase().split(/[^a-z0-9]+/);
+      const hasMatch = accTokens.some(t => t.length > 2 && granTokens.includes(t)) ||
+                       consent.grantee.toLowerCase() === 'clinician' ||
+                       consent.grantee.toLowerCase() === 'org1msp';
+      if (!hasMatch) {
+        return {
+          allowed: false,
+          status: 'DENIED',
+          reason: `Accessor '${accessorHash}' not authorized by consent grantee '${consent.grantee}'`,
+        };
+      }
+    }
+
     if (scope && !consent.scope.includes(scope)) {
       return { allowed: false, status: 'DENIED', reason: `Scope '${scope}' not covered in consent token` };
     }
@@ -291,6 +340,7 @@ class FabricLedgerService {
 
     const key = `AUDIT_${auditEvent.requestId}`;
     this.worldState.set(key, auditEvent);
+    this._addToIndex(this.patientAuditIndex, patientRefHash, auditEvent.requestId);
 
     const tx = this._recordTransaction('LogAccess', auditEvent, 'Org1MSP');
     this._emitEvent('AccessLogged', auditEvent);
@@ -327,10 +377,13 @@ class FabricLedgerService {
     };
 
     this.worldState.set(key, emergencyEvent);
+    this._addToIndex(this.patientEmergencyIndex, patientRefHash, emergencyId);
+    this.emergencyEventsIndex.add(emergencyId);
+
     const tx = this._recordTransaction('InvokeEmergencyAccess', emergencyEvent, 'Org2MSP');
     this._emitEvent('EmergencyAccessInvoked', emergencyEvent);
 
-    // Auto-log into immutable audit log
+    // Auto-log into immutable audit log with index
     await this.logAccess(
       `EMG_${emergencyId}`,
       patientRefHash,
@@ -353,6 +406,10 @@ class FabricLedgerService {
       throw new Error(`Emergency event '${emergencyId}' not found`);
     }
 
+    if (event.reviewStatus !== 'PENDING' && event.reviewStatus !== 'PENDING_DGHS_POST_HOC_REVIEW') {
+      throw new Error(`Emergency event '${emergencyId}' has already been reviewed (current status: '${event.reviewStatus}')`);
+    }
+
     event.reviewStatus = reviewStatus;
     event.reviewerHash = auditorIdHash;
     event.findingsHash = findingsHash || sha256(`Audit finding for emergency ${emergencyId}: ${reviewStatus}`);
@@ -366,10 +423,14 @@ class FabricLedgerService {
   }
 
   // =========================================================================
-  // Query Methods
+  // High-Performance Indexed Query Methods (O(1))
   // =========================================================================
   async getPatientReference(patientRefHash) {
     return this.worldState.get(patientRefHash) || null;
+  }
+
+  async getProviderReference(providerIdHash) {
+    return this.worldState.get(`PROV_${providerIdHash}`) || null;
   }
 
   async getRecordReference(recordId) {
@@ -377,51 +438,54 @@ class FabricLedgerService {
   }
 
   async getRecordsByPatient(patientRefHash) {
+    const recordIds = this.patientRecordsIndex.get(patientRefHash);
+    if (!recordIds) return [];
     const results = [];
-    for (const [key, value] of this.worldState.entries()) {
-      if (key.startsWith('REC_') && value.patientRefHash === patientRefHash) {
-        results.push(value);
-      }
+    for (const recordId of recordIds) {
+      const rec = this.worldState.get(`REC_${recordId}`);
+      if (rec) results.push(rec);
     }
     return results;
   }
 
   async getConsentsByPatient(patientRefHash) {
+    const consentIds = this.patientConsentsIndex.get(patientRefHash);
+    if (!consentIds) return [];
     const results = [];
-    for (const [key, value] of this.worldState.entries()) {
-      if (key.startsWith('CONSENT_') && value.patientRefHash === patientRefHash) {
-        results.push(value);
-      }
+    for (const consentId of consentIds) {
+      const con = this.worldState.get(`CONSENT_${consentId}`);
+      if (con) results.push(con);
     }
     return results;
   }
 
   async getAuditHistory(patientRefHash) {
+    const requestIds = this.patientAuditIndex.get(patientRefHash);
+    if (!requestIds) return [];
     const results = [];
-    for (const [key, value] of this.worldState.entries()) {
-      if (key.startsWith('AUDIT_') && value.patientRefHash === patientRefHash) {
-        results.push(value);
-      }
+    for (const reqId of requestIds) {
+      const ev = this.worldState.get(`AUDIT_${reqId}`);
+      if (ev) results.push(ev);
     }
     return results.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   }
 
   async getAllEmergencyEvents() {
     const results = [];
-    for (const [key, value] of this.worldState.entries()) {
-      if (key.startsWith('EMERGENCY_')) {
-        results.push(value);
-      }
+    for (const emergencyId of this.emergencyEventsIndex) {
+      const ev = this.worldState.get(`EMERGENCY_${emergencyId}`);
+      if (ev) results.push(ev);
     }
     return results;
   }
 
   async getEmergencyEventsByPatient(patientRefHash) {
+    const emergencyIds = this.patientEmergencyIndex.get(patientRefHash);
+    if (!emergencyIds) return [];
     const results = [];
-    for (const [key, value] of this.worldState.entries()) {
-      if (key.startsWith('EMERGENCY_') && value.patientRefHash === patientRefHash) {
-        results.push(value);
-      }
+    for (const emergencyId of emergencyIds) {
+      const ev = this.worldState.get(`EMERGENCY_${emergencyId}`);
+      if (ev) results.push(ev);
     }
     return results;
   }

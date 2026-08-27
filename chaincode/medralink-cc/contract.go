@@ -390,7 +390,16 @@ func (c *MedralinkContract) RequestAccess(
 		}, nil
 	}
 
-	// 4. Check scope allowlist
+	// 4. Check grantee authorization
+	if consent.Grantee != "" && consent.Grantee != "ALL" && accessorHash != "" && consent.Grantee != accessorHash {
+		return &AccessVerificationResult{
+			Allowed: false,
+			Reason:  fmt.Sprintf("accessor '%s' not authorized by consent grantee '%s'", accessorHash, consent.Grantee),
+			Status:  "DENIED",
+		}, nil
+	}
+
+	// 5. Check scope allowlist
 	scopeAllowed := false
 	for _, s := range consent.Scope {
 		if s == scope {
@@ -406,7 +415,7 @@ func (c *MedralinkContract) RequestAccess(
 		}, nil
 	}
 
-	// 5. Check purpose alignment
+	// 6. Check purpose alignment
 	if purpose != "" && consent.Purpose != purpose {
 		return &AccessVerificationResult{
 			Allowed: false,
@@ -560,10 +569,11 @@ func (c *MedralinkContract) InvokeEmergencyAccess(
 	}
 
 	// Auto-log the emergency access attempt into the immutable audit trail
-	auditKey := fmt.Sprintf("%sEMG_%s", PrefixAudit, emergencyID)
+	auditReqID := fmt.Sprintf("EMG_%s", emergencyID)
+	auditKey := fmt.Sprintf("%s%s", PrefixAudit, auditReqID)
 	auditLog := &AccessEvent{
 		DocType:        DocTypeAccessEvent,
-		RequestID:      fmt.Sprintf("EMG_%s", emergencyID),
+		RequestID:      auditReqID,
 		PatientRefHash: patientRefHash,
 		AccessorHash:   clinicianIDHash,
 		Scope:          fmt.Sprintf("EMERGENCY_BREAKGLASS(%s)", reasonCode),
@@ -573,6 +583,11 @@ func (c *MedralinkContract) InvokeEmergencyAccess(
 	}
 	auditBytes, _ := json.Marshal(auditLog)
 	_ = ctx.GetStub().PutState(auditKey, auditBytes)
+
+	auditIndexKey, err := ctx.GetStub().CreateCompositeKey(CompositeKeyPatientAudit, []string{patientRefHash, auditReqID})
+	if err == nil {
+		_ = ctx.GetStub().PutState(auditIndexKey, []byte{0x00})
+	}
 
 	_ = ctx.GetStub().SetEvent(EventEmergencyAccessInvoked, eventJSON)
 	return emergencyEvent, nil
@@ -612,6 +627,10 @@ func (c *MedralinkContract) ReviewEmergencyAccess(
 	var event EmergencyAccessEvent
 	if err := json.Unmarshal(eventBytes, &event); err != nil {
 		return nil, err
+	}
+
+	if event.ReviewStatus != "PENDING" && event.ReviewStatus != "PENDING_DGHS_POST_HOC_REVIEW" {
+		return nil, fmt.Errorf("emergency event '%s' has already been reviewed (current status: '%s')", emergencyID, event.ReviewStatus)
 	}
 
 	reviewedAt = resolveTimestamp(ctx, reviewedAt)

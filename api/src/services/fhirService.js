@@ -118,7 +118,118 @@ function createPatientFHIRBundle(patientRefHash, clinicalData = {}) {
     },
   });
 
-  // 4. FHIR DiagnosticReport Resource (e.g. Fasting Blood Sugar Lab Test)
+  // 4. FHIR Condition Resource (e.g. Type 2 Diabetes Mellitus)
+  entries.push({
+    fullUrl: `urn:uuid:${uuidv4()}`,
+    resource: {
+      resourceType: 'Condition',
+      id: uuidv4(),
+      clinicalStatus: {
+        coding: [
+          {
+            system: 'http://terminology.hl7.org/CodeSystem/condition-clinical',
+            code: 'active',
+            display: 'Active',
+          },
+        ],
+      },
+      verificationStatus: {
+        coding: [
+          {
+            system: 'http://terminology.hl7.org/CodeSystem/condition-ver-status',
+            code: 'confirmed',
+            display: 'Confirmed',
+          },
+        ],
+      },
+      category: [
+        {
+          coding: [
+            {
+              system: 'http://terminology.hl7.org/CodeSystem/condition-category',
+              code: 'problem-list-item',
+              display: 'Problem List Item',
+            },
+          ],
+        },
+      ],
+      code: {
+        coding: [
+          {
+            system: 'http://snomed.info/sct',
+            code: '44054006',
+            display: 'Type 2 Diabetes Mellitus',
+          },
+        ],
+        text: 'Type 2 Diabetes Mellitus (SNOMED 44054006)',
+      },
+      subject: {
+        reference: `Patient/${patientRefHash.substring(0, 16)}`,
+      },
+      recordedDate: timestamp,
+    },
+  });
+
+  // 5. FHIR Observation Resource (e.g. Fasting Blood Glucose LOINC 1558-6)
+  entries.push({
+    fullUrl: `urn:uuid:${uuidv4()}`,
+    resource: {
+      resourceType: 'Observation',
+      id: uuidv4(),
+      status: 'final',
+      category: [
+        {
+          coding: [
+            {
+              system: 'http://terminology.hl7.org/CodeSystem/observation-category',
+              code: 'laboratory',
+              display: 'Laboratory',
+            },
+          ],
+        },
+      ],
+      code: {
+        coding: [
+          {
+            system: 'http://loinc.org',
+            code: '1558-6',
+            display: 'Fasting Glucose [Mass/volume] in Serum or Plasma',
+          },
+        ],
+        text: 'Fasting Blood Glucose',
+      },
+      subject: {
+        reference: `Patient/${patientRefHash.substring(0, 16)}`,
+      },
+      effectiveDateTime: timestamp,
+      valueQuantity: {
+        value: 7.8,
+        unit: 'mmol/L',
+        system: 'http://unitsofmeasure.org',
+        code: 'mmol/L',
+      },
+      referenceRange: [
+        {
+          low: { value: 4.0, unit: 'mmol/L' },
+          high: { value: 7.0, unit: 'mmol/L' },
+          type: { text: 'Normal Fasting Range' },
+        },
+      ],
+      interpretation: [
+        {
+          coding: [
+            {
+              system: 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation',
+              code: 'H',
+              display: 'High',
+            },
+          ],
+        },
+      ],
+    },
+  });
+
+  // 6. FHIR DiagnosticReport Resource (e.g. Fasting Blood Sugar Lab Report)
   entries.push({
     fullUrl: `urn:uuid:${uuidv4()}`,
     resource: {
@@ -144,7 +255,7 @@ function createPatientFHIRBundle(patientRefHash, clinicalData = {}) {
             display: 'Fasting Glucose [Mass/volume] in Serum or Plasma',
           },
         ],
-        text: 'Fasting Blood Glucose Test',
+        text: 'Fasting Blood Glucose Test Report',
       },
       subject: {
         reference: `Patient/${patientRefHash.substring(0, 16)}`,

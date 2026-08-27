@@ -1,4 +1,8 @@
-# MedraLink — Decentralized Healthcare Data Interoperability & Audit Provenance Platform
+<div align="center">
+  <img src="../assets/branding/medralink_logo.jpg" alt="MedraLink Master Logo" width="140" style="border-radius: 14px; margin-bottom: 12px;" />
+  <h1>MedraLink — Working Prototype Stack</h1>
+  <p><strong>Hyperledger Fabric 2.5 • HL7 FHIR R4 • Autonomous Agentic AI Multi-Agent Engine</strong></p>
+</div>
 
 > ⚠️ **IMPORTANT NOTICE & SYNTHETIC DATA DISCLAIMER:**  
 > **This repository is a SYNTHETIC MedraLink Prototype, NOT the original live hospital deployment.**  
@@ -164,6 +168,47 @@ Open `http://localhost:5173` in your browser to access:
 * ⚙️ **Hospital Admin Portal:** Onboard providers and inspect 4-org consortium status.
 * 🤖 **Agentic AI Studio:** Interactive sandboxes for all 5 autonomous agents & DAG orchestration workflows.
 * 🎬 **9-Step Live Demo Tour:** Guided walkthrough demonstrating end-to-end blockchain and AI operations.
+
+---
+
+## 🔑 Pre-Configured Demo Accounts & Role Login Information
+
+The MedraLink interactive prototype features a built-in **Role Selector Switcher** in the top navigation bar, allowing evaluators, judges, and developers to switch between all consortium roles instantly without manual credential entry.
+
+### 👤 Role & Account Credentials Matrix
+
+| Portal / Role | Persona Name | Synthetic ID / Account ID | MSP Organization | X.509 Certificate OU | Permissions & Primary Capabilities |
+|---|---|---|---|---|---|
+| **👤 Patient (Citizen)** | Rahim Chowdhury | `BD-HEALTH-994821` (DOB: `1992-05-14`) | `Org1MSP` (Hospital A) | `OU=Patient` | Grant/revoke granular consent tokens (scopes: Allergy, Meds, Conditions, Labs), view immutable audit trail. |
+| **🩺 Authorized Clinician** | Dr. Hasan Mahmud | `clinician_dr_hasan` (`DR_HASAN_CLINICIAN`) | `Org1MSP` (Hospital A) | `OU=Clinician` | Create off-chain encrypted FHIR bundles, request consent-gated decryption, view patient diagnostic history. |
+| **🚨 Emergency Clinician** | Dr. Nusrat Alam | `emergency_dr_alam` (`DR-EMERGENCY-02`) | `Org2MSP` (Hospital B ED) | `OU=Emergency` | 60-minute time-boxed emergency break-glass override, trauma vitals evaluation, life-safety allergy alerts. |
+| **🛡️ DGHS Compliance Auditor** | DGHS Inspector | `auditor_dghs_01` (`AUDITOR-DGHS-01`) | `OrgAuditorMSP` (DGHS) | `OU=Auditor` (Read-Only) | Post-hoc emergency break-glass review (`APPROPRIATE`/`INAPPROPRIATE`), forensic block hash verification. |
+| **⚙️ Consortium Admin** | System Admin | `admin_hospital_a` | `Org1MSP` (Hospital A) | `OU=Admin` | Register authorized healthcare providers, onboard patient pseudonyms, 1-click consortium state bootstrap. |
+| **🤖 Agentic AI Studio** | 5 Autonomous Agents | `MedraLinkOrchestrator` | `DAG Orchestrator` | `Autonomous Multi-Agent` | Execute DAG workflows (`CLINICAL_INTAKE`, `EMERGENCY_TRAUMA`, `FORENSIC_SCAN`), test SNOMED/LOINC/RxNorm. |
+
+### 🌐 Direct REST API Authentication
+
+When testing the REST API gateway (`http://localhost:3001`) via `curl` or Postman:
+
+1. **Header-Based Demo Role Switching (Recommended for Testing):**
+   ```bash
+   # Make request as an Authorized Clinician
+   curl -X GET http://localhost:3001/api/records/<recordId>?consentId=<consentId>&purpose=treatment \
+     -H "Content-Type: application/json" \
+     -H "x-demo-role: clinician"
+
+   # Make request as DGHS Auditor
+   curl -X GET http://localhost:3001/api/emergency/all \
+     -H "Content-Type: application/json" \
+     -H "x-demo-role: auditor"
+   ```
+   *Accepted `x-demo-role` values:* `patient`, `clinician`, `emergency`, `auditor`, `admin`.
+
+2. **Bearer JWT Token Authentication:**
+   ```bash
+   curl -X GET http://localhost:3001/api/status \
+     -H "Authorization: Bearer <JWT_TOKEN>"
+   ```
 
 ---
 

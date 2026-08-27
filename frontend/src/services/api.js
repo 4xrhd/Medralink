@@ -1,7 +1,7 @@
 const API_BASE = '/api';
 
 export async function request(path, options = {}) {
-  const currentRole = localStorage.getItem('medralink_demo_role') || 'Patient';
+  const currentRole = options.role || options.headers?.['x-demo-role'] || localStorage.getItem('medralink_demo_role') || 'Patient';
   
   const headers = {
     'Content-Type': 'application/json',
@@ -15,9 +15,15 @@ export async function request(path, options = {}) {
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
 
-  const data = await response.json();
+  let data;
+  try {
+    data = await response.json();
+  } catch {
+    data = { reason: response.statusText || 'API request failed' };
+  }
+
   if (!response.ok) {
-    const errorMsg = data?.issue?.[0]?.diagnostics || data?.reason || 'API request failed';
+    const errorMsg = data?.issue?.[0]?.diagnostics || data?.reason || data?.message || `HTTP ${response.status} Error`;
     const error = new Error(errorMsg);
     error.status = response.status;
     error.data = data;
@@ -28,43 +34,43 @@ export async function request(path, options = {}) {
 
 export const api = {
   // Health & Network
-  getHealth: () => request('/health'),
-  getNetworkStatus: () => request('/status'),
-  bootstrapDemo: () => request('/demo/bootstrap', { method: 'POST' }),
+  getHealth: (options) => request('/health', options),
+  getNetworkStatus: (options) => request('/status', options),
+  bootstrapDemo: (options) => request('/demo/bootstrap', { method: 'POST', ...options }),
 
   // Patients
-  getSyntheticPatients: () => request('/patients/synthetic'),
-  registerPatient: (body) => request('/patients/register', { method: 'POST', body }),
-  getPatient: (patientRefHash) => request(`/patients/${patientRefHash}`),
+  getSyntheticPatients: (options) => request('/patients/synthetic', options),
+  registerPatient: (body, options) => request('/patients/register', { method: 'POST', body, ...options }),
+  getPatient: (patientRefHash, options) => request(`/patients/${patientRefHash}`, options),
 
   // Providers
-  registerProvider: (body) => request('/providers/register', { method: 'POST', body }),
+  registerProvider: (body, options) => request('/providers/register', { method: 'POST', body, ...options }),
 
   // Records
-  createRecord: (body) => request('/records', { method: 'POST', body }),
-  getRecord: (id, params = {}) => {
+  createRecord: (body, options) => request('/records', { method: 'POST', body, ...options }),
+  getRecord: (id, params = {}, options = {}) => {
     const query = new URLSearchParams(params).toString();
-    return request(`/records/${id}${query ? `?${query}` : ''}`);
+    return request(`/records/${id}${query ? `?${query}` : ''}`, options);
   },
-  getPatientRecords: (patientRefHash) => request(`/records/patient/${patientRefHash}`),
+  getPatientRecords: (patientRefHash, options) => request(`/records/patient/${patientRefHash}`, options),
 
   // Consents
-  grantConsent: (body) => request('/consents', { method: 'POST', body }),
-  revokeConsent: (consentId, patientRefHash) =>
-    request(`/consents/${consentId}`, { method: 'DELETE', body: { patientRefHash } }),
-  getPatientConsents: (patientRefHash) => request(`/consents/patient/${patientRefHash}`),
+  grantConsent: (body, options) => request('/consents', { method: 'POST', body, ...options }),
+  revokeConsent: (consentId, patientRefHash, options) =>
+    request(`/consents/${consentId}`, { method: 'DELETE', body: { patientRefHash }, ...options }),
+  getPatientConsents: (patientRefHash, options) => request(`/consents/patient/${patientRefHash}`, options),
 
   // Access Verification
-  requestAccess: (body) => request('/access/request', { method: 'POST', body }),
+  requestAccess: (body, options) => request('/access/request', { method: 'POST', body, ...options }),
 
   // Emergency Break-Glass
-  invokeEmergency: (body) => request('/emergency/invoke', { method: 'POST', body }),
-  reviewEmergency: (body) => request('/emergency/review', { method: 'POST', body }),
-  getAllEmergencyEvents: () => request('/emergency/all'),
+  invokeEmergency: (body, options) => request('/emergency/invoke', { method: 'POST', body, ...options }),
+  reviewEmergency: (body, options) => request('/emergency/review', { method: 'POST', body, ...options }),
+  getAllEmergencyEvents: (options) => request('/emergency/all', options),
 
   // Audit Trail & Blocks
-  getAuditHistory: (patientRefHash) => request(`/audit/${patientRefHash}`),
-  getBlocks: () => request('/audit/blocks/all'),
+  getAuditHistory: (patientRefHash, options) => request(`/audit/${patientRefHash}`, options),
+  getBlocks: (options) => request('/audit/blocks/all', options),
 
   // Agentic AI Multi-Agent Engine
   getAgentStatus: () => request('/agents/status'),
@@ -75,4 +81,21 @@ export const api = {
   evaluateConsent: (body) => request('/agents/consent-evaluate', { method: 'POST', body }),
   triageEmergency: (body) => request('/agents/emergency-triage', { method: 'POST', body }),
   auditScan: (body = {}) => request('/agents/audit-scan', { method: 'POST', body }),
+
+  // Real-time Event Stream (SSE)
+  subscribeEvents: (onEvent, onError) => {
+    const eventSource = new EventSource('/api/events');
+    eventSource.onmessage = (e) => {
+      try {
+        const parsed = JSON.parse(e.data);
+        if (onEvent) onEvent(parsed);
+      } catch (err) {
+        console.error('[SSE Parse Error]:', err);
+      }
+    };
+    eventSource.onerror = (err) => {
+      if (onError) onError(err);
+    };
+    return () => eventSource.close();
+  },
 };

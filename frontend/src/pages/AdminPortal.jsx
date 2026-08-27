@@ -20,6 +20,24 @@ export default function AdminPortal() {
 
   const [isBootstrapping, setIsBootstrapping] = useState(false);
 
+  React.useEffect(() => {
+    const refreshStatus = async () => {
+      try {
+        const s = await api.getNetworkStatus();
+        setNetworkStatus(s);
+      } catch (err) {
+        // ignore
+      }
+    };
+    refreshStatus();
+    const unsubscribe = api.subscribeEvents(() => {
+      refreshStatus();
+    });
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
+
   const handleRegisterProvider = async (e) => {
     e.preventDefault();
     setIsRegisteringProvider(true);
@@ -90,19 +108,19 @@ export default function AdminPortal() {
       {/* Header */}
       <div className="glass-panel p-6 border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
-            <Settings className="w-6 h-6" />
+          <div className="w-10 h-10 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300">
+            <Settings className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white">Hospital & Consortium Admin Portal</h1>
-            <p className="text-xs text-slate-400">Membership Service Provider (MSP) Management • Identity: <span className="text-purple-300 font-mono">OU=Admin, Org1MSP</span></p>
+            <h1 className="text-xl font-bold text-slate-100">Hospital & Consortium Admin Portal</h1>
+            <p className="text-xs text-slate-400">Membership Service Provider (MSP) Management • Identity: <span className="text-slate-300 font-mono">OU=Admin, Org1MSP</span></p>
           </div>
         </div>
 
         <button
           onClick={handleBootstrapDemo}
           disabled={isBootstrapping}
-          className="px-4 py-2 rounded-lg gradient-teal text-slate-950 font-bold text-xs flex items-center gap-2 hover:opacity-95 shadow-md shadow-teal-500/20"
+          className="px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-medium text-xs flex items-center gap-2 shadow-sm transition-colors"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isBootstrapping ? 'animate-spin' : ''}`} />
           Bootstrap Demo State (1-Click)
@@ -112,8 +130,8 @@ export default function AdminPortal() {
       {/* Network Consortium Status Overview */}
       <div className="glass-panel p-6 border-slate-800 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Network className="w-5 h-5 text-teal-400" />
+          <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
+            <Network className="w-4 h-4 text-teal-400" />
             Hyperledger Fabric 4-Organization Topology
           </h2>
           <span className="badge-status badge-granted text-[10px]">CONSENSUS: RAFT CFT</span>
@@ -121,12 +139,12 @@ export default function AdminPortal() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {networkStatus?.organizations?.map((orgItem) => (
-            <div key={orgItem.mspId} className="bg-slate-900/90 border border-slate-800 p-4 rounded-xl space-y-2 text-xs">
+            <div key={orgItem.mspId} className="bg-slate-950/70 border border-slate-800 p-4 rounded-lg space-y-1.5 text-xs">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-white">{orgItem.name}</span>
+                <span className="font-semibold text-slate-200">{orgItem.name}</span>
                 <span className="badge-status badge-granted text-[9px]">{orgItem.status}</span>
               </div>
-              <div className="text-[11px] font-mono text-teal-300">{orgItem.mspId}</div>
+              <div className="text-[11px] font-mono text-teal-400">{orgItem.mspId}</div>
               <div className="text-[10px] text-slate-400">{orgItem.role}</div>
             </div>
           ))}
@@ -136,8 +154,8 @@ export default function AdminPortal() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Register Provider Form */}
         <div className="glass-panel p-6 border-slate-800 space-y-4">
-          <h2 className="text-sm font-bold text-white flex items-center gap-2">
-            <UserPlus className="w-4 h-4 text-purple-400" />
+          <h2 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+            <UserPlus className="w-4 h-4 text-slate-300" />
             Register Authorized Healthcare Provider
           </h2>
           <form onSubmit={handleRegisterProvider} className="space-y-4">
@@ -147,7 +165,7 @@ export default function AdminPortal() {
                 type="text"
                 value={providerId}
                 onChange={(e) => setProviderId(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200"
+                className="w-full bg-slate-950/70 border border-slate-750 rounded-lg px-3 py-2 text-xs font-mono text-slate-200"
                 required
               />
             </div>
@@ -157,10 +175,11 @@ export default function AdminPortal() {
                 <select
                   value={org}
                   onChange={(e) => setOrg(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200"
+                  className="w-full bg-slate-950/70 border border-slate-750 rounded-lg px-3 py-2 text-xs text-slate-200"
                 >
                   <option value="Org1MSP">Hospital A (Org1MSP)</option>
                   <option value="Org2MSP">Hospital B (Org2MSP)</option>
+                  <option value="OrgAuditorMSP">DGHS Compliance Authority (OrgAuditorMSP)</option>
                 </select>
               </div>
               <div>
@@ -168,10 +187,11 @@ export default function AdminPortal() {
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200"
+                  className="w-full bg-slate-950/70 border border-slate-750 rounded-lg px-3 py-2 text-xs text-slate-200"
                 >
                   <option value="Clinician">Clinician (General)</option>
                   <option value="Emergency">Emergency Doctor</option>
+                  <option value="Auditor">Compliance Auditor</option>
                   <option value="Admin">Administrator</option>
                 </select>
               </div>
@@ -179,7 +199,7 @@ export default function AdminPortal() {
             <button
               type="submit"
               disabled={isRegisteringProvider}
-              className="w-full py-2.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs"
+              className="w-full py-2.5 rounded-lg bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 font-medium text-xs transition-colors"
             >
               Anchor Provider Reference on Blockchain
             </button>
@@ -188,7 +208,7 @@ export default function AdminPortal() {
 
         {/* Register Patient Form */}
         <div className="glass-panel p-6 border-slate-800 space-y-4">
-          <h2 className="text-sm font-bold text-white flex items-center gap-2">
+          <h2 className="text-sm font-bold text-slate-100 flex items-center gap-2">
             <Shield className="w-4 h-4 text-teal-400" />
             Onboard Patient (Mock Identity Adapter)
           </h2>
@@ -199,7 +219,7 @@ export default function AdminPortal() {
                 type="text"
                 value={syntheticId}
                 onChange={(e) => setSyntheticId(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200"
+                className="w-full bg-slate-950/70 border border-slate-750 rounded-lg px-3 py-2 text-xs font-mono text-slate-200"
                 required
               />
             </div>
@@ -210,7 +230,7 @@ export default function AdminPortal() {
                   type="date"
                   value={dob}
                   onChange={(e) => setDob(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200"
+                  className="w-full bg-slate-950/70 border border-slate-750 rounded-lg px-3 py-2 text-xs text-slate-200"
                   required
                 />
               </div>
@@ -219,7 +239,7 @@ export default function AdminPortal() {
                 <select
                   value={patientHomeOrg}
                   onChange={(e) => setPatientHomeOrg(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200"
+                  className="w-full bg-slate-950/70 border border-slate-750 rounded-lg px-3 py-2 text-xs text-slate-200"
                 >
                   <option value="Org1MSP">Hospital A (Org1MSP)</option>
                   <option value="Org2MSP">Hospital B (Org2MSP)</option>
@@ -229,7 +249,7 @@ export default function AdminPortal() {
             <button
               type="submit"
               disabled={isRegisteringPatient}
-              className="w-full py-2.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs"
+              className="w-full py-2.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-medium text-xs transition-colors shadow-sm"
             >
               Generate Hash & Register on Ledger
             </button>
