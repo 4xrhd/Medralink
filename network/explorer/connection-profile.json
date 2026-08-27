@@ -1,0 +1,64 @@
+{
+  "name": "medralink-network",
+  "version": "1.0.0",
+  "client": {
+    "organization": "Org3MSP",
+    "connection": {
+      "timeout": {
+        "peer": {
+          "endorser": "300"
+        },
+        "orderer": "300"
+      }
+    }
+  },
+  "channels": {
+    "medralink-main": {
+      "orderers": ["orderer1.medralink.org"],
+      "peers": {
+        "peer0.org1.hospital-a.medralink.org": {
+          "endorsingPeer": true,
+          "chaincodeQuery": true,
+          "ledgerQuery": true,
+          "eventSource": true
+        },
+        "peer0.org2.hospital-b.medralink.org": {
+          "endorsingPeer": true,
+          "chaincodeQuery": true,
+          "ledgerQuery": true,
+          "eventSource": true
+        },
+        "peer0.org3.operator.medralink.org": {
+          "endorsingPeer": false,
+          "chaincodeQuery": true,
+          "ledgerQuery": true,
+          "eventSource": true
+        },
+        "peer0.orgauditor.dghs.medralink.org": {
+          "endorsingPeer": false,
+          "chaincodeQuery": true,
+          "ledgerQuery": true,
+          "eventSource": true
+        }
+      }
+    }
+  },
+  "organizations": {
+    "Org1MSP": {
+      "mspid": "Org1MSP",
+      "peers": ["peer0.org1.hospital-a.medralink.org"]
+    },
+    "Org2MSP": {
+      "mspid": "Org2MSP",
+      "peers": ["peer0.org2.hospital-b.medralink.org"]
+    },
+    "Org3MSP": {
+      "mspid": "Org3MSP",
+      "peers": ["peer0.org3.operator.medralink.org"]
+    },
+    "OrgAuditorMSP": {
+      "mspid": "OrgAuditorMSP",
+      "peers": ["peer0.orgauditor.dghs.medralink.org"]
+    }
+  }
+}

@@ -1,0 +1,212 @@
+version: '3.8'
+
+networks:
+  medralink-net:
+    name: medralink-net
+
+services:
+  # =========================================================================
+  # Raft Orderers
+  # =========================================================================
+  orderer1.medralink.org:
+    image: hyperledger/fabric-orderer:2.5
+    container_name: orderer1.medralink.org
+    environment:
+      - FABRIC_LOGGING_SPEC=INFO
+      - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
+      - ORDERER_GENERAL_LISTENPORT=7050
+      - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
+      - ORDERER_GENERAL_LOCALMSPDIR=/var/hyperledger/orderer/msp
+      - ORDERER_GENERAL_TLS_ENABLED=false
+      - ORDERER_GENERAL_BOOTSTRAPMETHOD=none
+      - ORDERER_CHANNELPARTICIPATION_ENABLED=true
+      - ORDERER_ADMIN_LISTENADDRESS=0.0.0.0:7053
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: orderer
+    volumes:
+      - ./crypto-config/ordererOrganizations/orderer.medralink.org/orderers/orderer1.medralink.org/msp:/var/hyperledger/orderer/msp
+    ports:
+      - "7050:7050"
+      - "7053:7053"
+    networks:
+      - medralink-net
+
+  # =========================================================================
+  # Org 1 — Pilot Hospital A (Peer0 + CouchDB)
+  # =========================================================================
+  couchdb0:
+    image: couchdb:3.3.2
+    container_name: couchdb0
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
+    ports:
+      - "5984:5984"
+    networks:
+      - medralink-net
+
+  peer0.org1.hospital-a.medralink.org:
+    image: hyperledger/fabric-peer:2.5
+    container_name: peer0.org1.hospital-a.medralink.org
+    environment:
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=medralink-net
+      - FABRIC_LOGGING_SPEC=INFO
+      - CORE_PEER_TLS_ENABLED=false
+      - CORE_PEER_PROFILE_ENABLED=true
+      - CORE_PEER_ID=peer0.org1.hospital-a.medralink.org
+      - CORE_PEER_ADDRESS=peer0.org1.hospital-a.medralink.org:7051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
+      - CORE_PEER_CHAINCODEADDRESS=peer0.org1.hospital-a.medralink.org:7052
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:7052
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.hospital-a.medralink.org:7051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org1.hospital-a.medralink.org:7051
+      - CORE_PEER_LOCALMSPID=Org1MSP
+      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb0:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
+    volumes:
+      - /var/run/:/host/var/run/
+      - ./crypto-config/peerOrganizations/org1.hospital-a.medralink.org/peers/peer0.org1.hospital-a.medralink.org/msp:/etc/hyperledger/fabric/msp
+    ports:
+      - "7051:7051"
+    depends_on:
+      - couchdb0
+      - orderer1.medralink.org
+    networks:
+      - medralink-net
+
+  # =========================================================================
+  # Org 2 — Pilot Hospital B / Lab (Peer0 + CouchDB)
+  # =========================================================================
+  couchdb1:
+    image: couchdb:3.3.2
+    container_name: couchdb1
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
+    ports:
+      - "6984:5984"
+    networks:
+      - medralink-net
+
+  peer0.org2.hospital-b.medralink.org:
+    image: hyperledger/fabric-peer:2.5
+    container_name: peer0.org2.hospital-b.medralink.org
+    environment:
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=medralink-net
+      - FABRIC_LOGGING_SPEC=INFO
+      - CORE_PEER_TLS_ENABLED=false
+      - CORE_PEER_PROFILE_ENABLED=true
+      - CORE_PEER_ID=peer0.org2.hospital-b.medralink.org
+      - CORE_PEER_ADDRESS=peer0.org2.hospital-b.medralink.org:8051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:8051
+      - CORE_PEER_CHAINCODEADDRESS=peer0.org2.hospital-b.medralink.org:8052
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:8052
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org2.hospital-b.medralink.org:8051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org2.hospital-b.medralink.org:8051
+      - CORE_PEER_LOCALMSPID=Org2MSP
+      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb1:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
+    volumes:
+      - /var/run/:/host/var/run/
+      - ./crypto-config/peerOrganizations/org2.hospital-b.medralink.org/peers/peer0.org2.hospital-b.medralink.org/msp:/etc/hyperledger/fabric/msp
+    ports:
+      - "8051:8051"
+    depends_on:
+      - couchdb1
+      - orderer1.medralink.org
+    networks:
+      - medralink-net
+
+  # =========================================================================
+  # Org 3 — Medralink Operator / Gateway (Peer0 + CouchDB)
+  # =========================================================================
+  couchdb2:
+    image: couchdb:3.3.2
+    container_name: couchdb2
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
+    ports:
+      - "7984:5984"
+    networks:
+      - medralink-net
+
+  peer0.org3.operator.medralink.org:
+    image: hyperledger/fabric-peer:2.5
+    container_name: peer0.org3.operator.medralink.org
+    environment:
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=medralink-net
+      - FABRIC_LOGGING_SPEC=INFO
+      - CORE_PEER_TLS_ENABLED=false
+      - CORE_PEER_PROFILE_ENABLED=true
+      - CORE_PEER_ID=peer0.org3.operator.medralink.org
+      - CORE_PEER_ADDRESS=peer0.org3.operator.medralink.org:9051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:9051
+      - CORE_PEER_CHAINCODEADDRESS=peer0.org3.operator.medralink.org:9052
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:9052
+      - CORE_PEER_LOCALMSPID=Org3MSP
+      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb2:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
+    volumes:
+      - /var/run/:/host/var/run/
+      - ./crypto-config/peerOrganizations/org3.operator.medralink.org/peers/peer0.org3.operator.medralink.org/msp:/etc/hyperledger/fabric/msp
+    ports:
+      - "9051:9051"
+    depends_on:
+      - couchdb2
+      - orderer1.medralink.org
+    networks:
+      - medralink-net
+
+  # =========================================================================
+  # Org Auditor — DGHS / Regulatory Observer (Peer0 + CouchDB)
+  # =========================================================================
+  couchdb3:
+    image: couchdb:3.3.2
+    container_name: couchdb3
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
+    ports:
+      - "8984:5984"
+    networks:
+      - medralink-net
+
+  peer0.orgauditor.dghs.medralink.org:
+    image: hyperledger/fabric-peer:2.5
+    container_name: peer0.orgauditor.dghs.medralink.org
+    environment:
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=medralink-net
+      - FABRIC_LOGGING_SPEC=INFO
+      - CORE_PEER_TLS_ENABLED=false
+      - CORE_PEER_PROFILE_ENABLED=true
+      - CORE_PEER_ID=peer0.orgauditor.dghs.medralink.org
+      - CORE_PEER_ADDRESS=peer0.orgauditor.dghs.medralink.org:10051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:10051
+      - CORE_PEER_CHAINCODEADDRESS=peer0.orgauditor.dghs.medralink.org:10052
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:10052
+      - CORE_PEER_LOCALMSPID=OrgAuditorMSP
+      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb3:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
+    volumes:
+      - /var/run/:/host/var/run/
+      - ./crypto-config/peerOrganizations/orgauditor.dghs.medralink.org/peers/peer0.orgauditor.dghs.medralink.org/msp:/etc/hyperledger/fabric/msp
+    ports:
+      - "10051:10051"
+    depends_on:
+      - couchdb3
+      - orderer1.medralink.org
+    networks:
+      - medralink-net

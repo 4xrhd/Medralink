@@ -1,0 +1,46 @@
+# ---------------------------------------------------------------------------
+# Crypto-config for MedraLink 4-Organization Permissioned Consortium
+# (Org1: Hospital A, Org2: Hospital B, Org3: Operator, OrgAuditor: Observer)
+# ---------------------------------------------------------------------------
+
+OrdererOrgs:
+  - Name: Orderer
+    Domain: orderer.medralink.org
+    EnableNodeOUs: true
+    Specs:
+      - Hostname: orderer1
+      - Hostname: orderer2
+      - Hostname: orderer3
+
+PeerOrgs:
+  - Name: Org1
+    Domain: org1.hospital-a.medralink.org
+    EnableNodeOUs: true
+    Template:
+      Count: 1
+    Users:
+      Count: 3 # Admin, Clinician, Patient
+
+  - Name: Org2
+    Domain: org2.hospital-b.medralink.org
+    EnableNodeOUs: true
+    Template:
+      Count: 1
+    Users:
+      Count: 3 # Admin, Clinician, Lab
+
+  - Name: Org3
+    Domain: org3.operator.medralink.org
+    EnableNodeOUs: true
+    Template:
+      Count: 1
+    Users:
+      Count: 2 # Admin, GatewayService
+
+  - Name: OrgAuditor
+    Domain: orgauditor.dghs.medralink.org
+    EnableNodeOUs: true
+    Template:
+      Count: 1
+    Users:
+      Count: 2 # Admin, AuditorUser
