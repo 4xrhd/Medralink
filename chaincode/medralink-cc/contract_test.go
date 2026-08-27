@@ -237,3 +237,34 @@ func TestEmergencyReviewStatusTransition(t *testing.T) {
 	assert.NotEqual(t, "PENDING", emg.ReviewStatus)
 }
 
+func TestZeroPIIComprehensiveCheck(t *testing.T) {
+	// Valid Salted SHA-256 Hashes
+	validHash1 := "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+	validHash2 := "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+	assert.NoError(t, AssertZeroPII(validHash1, validHash2, "Org1MSP", "treatment"))
+
+	// Detected PII patterns
+	assert.Error(t, AssertZeroPII("patient123@hospital.gov.bd")) // Email
+	assert.Error(t, AssertZeroPII("01712345678"))               // BD mobile
+	assert.Error(t, AssertZeroPII("+8801812345678"))            // International BD format
+	assert.Error(t, AssertZeroPII("19921234567890123"))         // 17-digit NID
+	assert.Error(t, AssertZeroPII("1234567890123"))             // 13-digit NID
+	assert.Error(t, AssertZeroPII("1234567890"))                // 10-digit smart NID
+}
+
+func TestScopeDataMinimizationRules(t *testing.T) {
+	// Valid scopes
+	assert.NoError(t, ValidateScope([]string{"AllergyIntolerance"}))
+	assert.NoError(t, ValidateScope([]string{"MedicationRequest", "Condition"}))
+	assert.NoError(t, ValidateScope([]string{"DiagnosticReport", "Observation", "Procedure"}))
+
+	// Invalid / Prohibited wildcards
+	assert.Error(t, ValidateScope([]string{"*"}))
+	assert.Error(t, ValidateScope([]string{"AllergyIntolerance", "*"}))
+	assert.Error(t, ValidateScope([]string{"all"}))
+	assert.Error(t, ValidateScope([]string{"%"}))
+	assert.Error(t, ValidateScope([]string{}))
+	assert.Error(t, ValidateScope([]string{"UnknownNonFHIRResource"}))
+}
+
+

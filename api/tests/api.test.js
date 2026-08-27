@@ -499,5 +499,180 @@ test('19. Tamper Detection & Cryptographic Hash Anchor Verification', async () =
   stored.encryptedPayload.ciphertext = originalCiphertext;
 });
 
+test('20. Role-Based Access Control (RoleGuard Security Enforcement)', async () => {
+  // Patient role should not be allowed to register healthcare providers
+  const unauthorizedProviderReg = await apiRequest('/providers/register', {
+    method: 'POST',
+    role: 'Patient',
+    body: {
+      providerId: 'DR_UNAUTHORIZED',
+      org: 'Org1MSP',
+      role: 'Clinician',
+    },
+  });
+  assert.equal(unauthorizedProviderReg.status, 403);
+  assert.equal(unauthorizedProviderReg.data.resourceType, 'OperationOutcome');
+  assert.ok(unauthorizedProviderReg.data.issue[0].diagnostics.includes('not authorized'));
+});
+
+test('21. Scope Mismatch Access Enforcement (Data Minimization Violation Prevention)', async () => {
+  // 1. Register patient & create record with DiagnosticReport type
+  const pat = await apiRequest('/patients/register', {
+    method: 'POST',
+    body: { syntheticId: 'BD-HEALTH-443322', dob: '1985-02-20' },
+  });
+  const patientRefHash = pat.data.patientRefHash;
+
+  const recRes = await apiRequest('/records', {
+    method: 'POST',
+    role: 'Clinician',
+    body: {
+      patientRefHash,
+      recordType: 'DiagnosticReport',
+    },
+  });
+  const recordId = recRes.data.recordId;
+
+  // 2. Grant consent ONLY for AllergyIntolerance (not DiagnosticReport)
+  const conRes = await apiRequest('/consents', {
+    method: 'POST',
+    role: 'Patient',
+    body: {
+      patientRefHash,
+      grantee: 'DR_HASAN_CLINICIAN',
+      scope: ['AllergyIntolerance'],
+      purpose: 'treatment',
+      expiryDays: 3,
+    },
+  });
+  const consentId = conRes.data.consentId;
+
+  // 3. Clinician attempts retrieval of DiagnosticReport record with Allergy-only consent -> Must be denied
+  const scopeDenied = await apiRequest(`/records/${recordId}?consentId=${consentId}&purpose=treatment`, {
+    role: 'Clinician',
+  });
+  assert.equal(scopeDenied.status, 403);
+  assert.ok(scopeDenied.data.issue[0].diagnostics.includes('Scope') || scopeDenied.data.issue[0].diagnostics.includes('not covered'));
+});
+
+test('22. Expired Consent Rejection (Temporal Invariant Enforcement)', async () => {
+  const fabricService = require('../src/services/fabricService');
+
+  // 1. Register patient & record
+  const pat = await apiRequest('/patients/register', {
+    method: 'POST',
+    body: { syntheticId: 'BD-HEALTH-883311', dob: '1991-07-09' },
+  });
+  const patientRefHash = pat.data.patientRefHash;
+
+  const recRes = await apiRequest('/records', {
+    method: 'POST',
+    role: 'Clinician',
+    body: {
+      patientRefHash,
+      recordType: 'AllergyIntolerance',
+    },
+  });
+  const recordId = recRes.data.recordId;
+
+  // 2. Directly grant an already expired consent on Fabric ledger
+  const expiredConsentId = 'EXPIRED_CON_' + Math.random().toString(16).substring(2, 10);
+  const pastExpiry = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(); // 1 day ago
+  await fabricService.grantConsent(
+    expiredConsentId,
+    patientRefHash,
+    'DR_HASAN_CLINICIAN',
+    ['AllergyIntolerance'],
+    'treatment',
+    pastExpiry
+  );
+
+  // 3. Clinician attempts retrieval with expired consent token -> Must fail
+  const expiredFetch = await apiRequest(`/records/${recordId}?consentId=${expiredConsentId}&purpose=treatment`, {
+    role: 'Clinician',
+  });
+  assert.equal(expiredFetch.status, 403);
+  assert.ok(expiredFetch.data.issue[0].diagnostics.includes('expired') || expiredFetch.data.issue[0].diagnostics.includes('EXPIRED'));
+});
+
+test('23. Patient Role Direct Health Vault Retrieval & Decryption', async () => {
+  // 1. Register patient & record
+  const pat = await apiRequest('/patients/register', {
+    method: 'POST',
+    body: { syntheticId: 'BD-HEALTH-554433', dob: '1996-03-12' },
+  });
+  const patientRefHash = pat.data.patientRefHash;
+
+  const recRes = await apiRequest('/records', {
+    method: 'POST',
+    role: 'Clinician',
+    body: {
+      patientRefHash,
+      recordType: 'AllergyIntolerance',
+      clinicalData: { gender: 'female', birthDate: '1996-03-12' },
+    },
+  });
+  const recordId = recRes.data.recordId;
+
+  // 2. Patient directly fetches their own decrypted record
+  const patientFetch = await apiRequest(`/records/${recordId}`, {
+    role: 'Patient',
+  });
+  assert.equal(patientFetch.status, 200);
+  assert.equal(patientFetch.data.status, 'AUTHORIZED');
+  assert.ok(patientFetch.data.fhirBundle);
+  assert.equal(patientFetch.data.fhirBundle.resourceType, 'Bundle');
+});
+
+test('24. Direct AES-256-GCM Envelope Encryption & Auth Tag Verification', () => {
+  const { encryptFHIRBundle, decryptFHIRBundle } = require('../src/services/encryptionService');
+
+  const testBundle = {
+    resourceType: 'Bundle',
+    type: 'collection',
+    entry: [{ resource: { resourceType: 'Observation', id: 'obs-01', value: 120 } }],
+  };
+
+  // Encrypt
+  const encrypted = encryptFHIRBundle(testBundle);
+  assert.ok(encrypted.ciphertext);
+  assert.ok(encrypted.iv);
+  assert.ok(encrypted.authTag);
+  assert.ok(encrypted.recordHash);
+  assert.equal(encrypted.algorithm, 'aes-256-gcm');
+
+  // Decrypt
+  const decrypted = decryptFHIRBundle(encrypted);
+  assert.deepEqual(decrypted, testBundle);
+
+  // Tamper with auth tag -> Must throw decryption error
+  const tamperedPayload = {
+    ...encrypted,
+    authTag: '00112233445566778899aabbccddeeff',
+  };
+  assert.throws(() => {
+    decryptFHIRBundle(tamperedPayload);
+  }, /Decryption failed/);
+});
+
+test('25. Synthetic Identity Verification & Salted Pseudonym Hashes', () => {
+  const { verifySyntheticIdentity, getSyntheticPatientList } = require('../src/services/identityAdapter');
+
+  // Valid synthetic patient
+  const verified = verifySyntheticIdentity('BD-HEALTH-994821', '1992-05-14');
+  assert.ok(verified.patientRefHash);
+  assert.equal(verified.patientRefHash.length, 64); // SHA-256 hex string length
+  assert.equal(verified.verified, true);
+  assert.equal(verified.adapterMode, 'MOCK_IDENTITY_ADAPTER_v1');
+  assert.ok(verified.warning.includes('SYNTHETIC'));
+
+  // Predefined synthetic patient list
+  const list = getSyntheticPatientList();
+  assert.ok(Array.isArray(list));
+  assert.equal(list.length, 3);
+  assert.ok(list[0].patientRefHash);
+});
+
+
 
 
