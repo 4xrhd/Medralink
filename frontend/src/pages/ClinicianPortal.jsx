@@ -164,7 +164,7 @@ export default function ClinicianPortal() {
       setRecordId(res.recordId);
       await fetchPatientRecords();
     } catch (err) {
-      alert(`Failed to create record: ${err.message}`);
+      setAccessError(`Failed to create record: ${err.message}`);
     } finally {
       setIsCreatingRecord(false);
     }

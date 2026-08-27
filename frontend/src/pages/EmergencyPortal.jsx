@@ -55,10 +55,13 @@ export default function EmergencyPortal() {
     return () => clearInterval(timer);
   }, [activeEmergency, timeLeftSeconds]);
 
+  const [emergencyError, setEmergencyError] = useState(null);
+
   const handleBreakGlass = async (e) => {
     e.preventDefault();
+    setEmergencyError(null);
     if (!mfaConfirmed) {
-      alert('You must confirm emergency step-up authorization.');
+      setEmergencyError('You must confirm emergency step-up authorization.');
       return;
     }
 
@@ -79,7 +82,7 @@ export default function EmergencyPortal() {
         blockNumber: res.blockNumber,
       });
     } catch (err) {
-      alert(`Emergency invocation failed: ${err.message}`);
+      setEmergencyError(`Emergency invocation failed: ${err.message}`);
     } finally {
       setIsInvoking(false);
     }
@@ -177,6 +180,13 @@ export default function EmergencyPortal() {
                   </span>
                 </label>
               </div>
+
+              {emergencyError && (
+                <div className="p-3 bg-rose-950/50 border border-rose-500/40 rounded-lg text-rose-300 text-xs flex items-center gap-2">
+                  <AlertOctagon className="w-4 h-4 text-rose-400 shrink-0" />
+                  <span>{emergencyError}</span>
+                </div>
+              )}
 
               <button
                 type="submit"

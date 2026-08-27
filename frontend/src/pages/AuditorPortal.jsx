@@ -37,7 +37,10 @@ export default function AuditorPortal() {
     };
   }, []);
 
+  const [reviewFeedback, setReviewFeedback] = useState(null);
+
   const handleReview = async (emergencyId, reviewStatus) => {
+    setReviewFeedback(null);
     try {
       const res = await api.reviewEmergency({
         emergencyId,
@@ -53,9 +56,10 @@ export default function AuditorPortal() {
 
       setFindingsNote('');
       setSelectedEmergency(null);
+      setReviewFeedback({ type: 'success', message: `Emergency ${emergencyId.substring(0, 12)}... successfully reviewed and marked as ${reviewStatus}.` });
       await fetchData();
     } catch (err) {
-      alert(`Review submission failed: ${err.message}`);
+      setReviewFeedback({ type: 'error', message: `Review submission failed: ${err.message}` });
     }
   };
 
@@ -77,6 +81,29 @@ export default function AuditorPortal() {
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh Ledger
         </button>
       </div>
+
+      {reviewFeedback && (
+        <div className={`p-4 rounded-xl border flex items-center justify-between text-xs animate-fade-in ${
+          reviewFeedback.type === 'success'
+            ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-300'
+            : 'bg-rose-950/40 border-rose-500/30 text-rose-300'
+        }`}>
+          <div className="flex items-center gap-2.5">
+            {reviewFeedback.type === 'success' ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            ) : (
+              <AlertOctagon className="w-4 h-4 text-rose-400 shrink-0" />
+            )}
+            <span>{reviewFeedback.message}</span>
+          </div>
+          <button
+            onClick={() => setReviewFeedback(null)}
+            className="text-slate-400 hover:text-slate-200 ml-4 font-mono text-[11px]"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left: Emergency Break-Glass Reviews */}

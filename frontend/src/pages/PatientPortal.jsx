@@ -56,9 +56,12 @@ export default function PatientPortal() {
     };
   }, [patientRefHash]);
 
+  const [consentNotification, setConsentNotification] = useState(null);
+
   const handleGrantConsent = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setConsentNotification(null);
     try {
       const scope = [];
       if (scopeAllergy) scope.push('AllergyIntolerance');
@@ -68,7 +71,7 @@ export default function PatientPortal() {
       if (scopeDiagnostic) scope.push('DiagnosticReport');
 
       if (scope.length === 0) {
-        alert('Please select at least one granular clinical resource scope');
+        setConsentNotification({ type: 'error', message: 'Please select at least one granular clinical resource scope.' });
         return;
       }
 
@@ -86,17 +89,17 @@ export default function PatientPortal() {
         blockNumber: res.blockNumber,
       });
 
+      setConsentNotification({ type: 'success', message: `Granular consent granted to '${grantee}' for purpose '${purpose}' on blockchain.` });
       await fetchData();
     } catch (err) {
-      alert(`Failed to grant consent: ${err.message}`);
+      setConsentNotification({ type: 'error', message: `Failed to grant consent: ${err.message}` });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleRevokeConsent = async (consentId) => {
-    if (!confirm('Are you sure you want to revoke this consent? All future clinician access requests will be immediately blocked.')) return;
-
+    setConsentNotification(null);
     try {
       const res = await api.revokeConsent(consentId, patientRefHash);
       showTransactionReceipt({
@@ -104,9 +107,10 @@ export default function PatientPortal() {
         txId: res.txId,
         blockNumber: res.blockNumber,
       });
+      setConsentNotification({ type: 'success', message: `Consent token '${consentId.substring(0, 12)}...' successfully revoked. All clinician access requests will be blocked immediately.` });
       await fetchData();
     } catch (err) {
-      alert(`Revocation failed: ${err.message}`);
+      setConsentNotification({ type: 'error', message: `Revocation failed: ${err.message}` });
     }
   };
 
@@ -172,6 +176,30 @@ export default function PatientPortal() {
           </div>
         </div>
       </div>
+
+      {/* Inline Consent Notification Banner */}
+      {consentNotification && (
+        <div className={`p-4 rounded-xl border flex items-center justify-between text-xs animate-fade-in ${
+          consentNotification.type === 'success'
+            ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-300'
+            : 'bg-rose-950/40 border-rose-500/30 text-rose-300'
+        }`}>
+          <div className="flex items-center gap-2.5">
+            {consentNotification.type === 'success' ? (
+              <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+            ) : (
+              <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0" />
+            )}
+            <span>{consentNotification.message}</span>
+          </div>
+          <button
+            onClick={() => setConsentNotification(null)}
+            className="text-slate-400 hover:text-slate-200 ml-4 font-mono text-[11px]"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left 2 Cols: Consent Management */}
