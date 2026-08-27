@@ -9,7 +9,7 @@ class PatientService {
   getSyntheticPatients() {
     return {
       adapter: 'MOCK_IDENTITY_ADAPTER_v1',
-      warning: 'SYNTHETIC DATA — FOR DEMONSTRATION PURPOSES ONLY',
+      warning: 'SYNTHETIC DATA | FOR DEMONSTRATION PURPOSES ONLY',
       patients: getSyntheticPatientList(),
     };
   }

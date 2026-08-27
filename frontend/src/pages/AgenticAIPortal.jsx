@@ -10,6 +10,7 @@ import {
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { DEMO_CONSTANTS } from '../utils/constants';
+import ErrorBanner from '../components/ErrorBanner';
 import AgentOverviewGrid from '../components/agentic/AgentOverviewGrid';
 import DAGOrchestratorTab from '../components/agentic/DAGOrchestratorTab';
 import FHIRAgentTab from '../components/agentic/FHIRAgentTab';
@@ -22,6 +23,7 @@ export default function AgenticAIPortal() {
   const [dagResult, setDagResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('orchestrator');
+  const [agentError, setAgentError] = useState(null);
 
   // Custom agent inputs
   const [rawNotesInput, setRawNotesInput] = useState(
@@ -45,6 +47,7 @@ export default function AgenticAIPortal() {
   const handleRunDAG = async () => {
     setLoading(true);
     setDagResult(null);
+    setAgentError(null);
     try {
       const payload = {
         patientRefHash: patientHash,
@@ -74,7 +77,7 @@ export default function AgenticAIPortal() {
         });
       }
     } catch (err) {
-      alert(`DAG execution failed: ${err.message}`);
+      setAgentError(`DAG execution failed: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -83,6 +86,7 @@ export default function AgenticAIPortal() {
   const handleRunFHIRAgent = async () => {
     setLoading(true);
     setAgentOutput(null);
+    setAgentError(null);
     try {
       const res = await api.normalizeFHIR({
         patientRefHash: patientHash,
@@ -91,7 +95,7 @@ export default function AgenticAIPortal() {
       });
       setAgentOutput({ type: 'FHIRAgent', data: res });
     } catch (err) {
-      alert(`FHIRAgent failed: ${err.message}`);
+      setAgentError(`FHIRAgent normalization failed: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -100,6 +104,7 @@ export default function AgenticAIPortal() {
   const handleRunEmergencyTriage = async () => {
     setLoading(true);
     setAgentOutput(null);
+    setAgentError(null);
     try {
       const res = await api.triageEmergency({
         clinicianId: DEMO_CONSTANTS.DEFAULT_EMERGENCY_CLINICIAN_ID,
@@ -110,7 +115,7 @@ export default function AgenticAIPortal() {
       });
       setAgentOutput({ type: 'EmergencyTriageAgent', data: res });
     } catch (err) {
-      alert(`EmergencyTriageAgent failed: ${err.message}`);
+      setAgentError(`EmergencyTriageAgent failed: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -119,11 +124,12 @@ export default function AgenticAIPortal() {
   const handleRunAuditScan = async () => {
     setLoading(true);
     setAgentOutput(null);
+    setAgentError(null);
     try {
       const res = await api.auditScan();
       setAgentOutput({ type: 'AuditAgent', data: res });
     } catch (err) {
-      alert(`AuditAgent scan failed: ${err.message}`);
+      setAgentError(`AuditAgent scan failed: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -138,6 +144,12 @@ export default function AgenticAIPortal() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      {agentError && (
+        <ErrorBanner
+          error={agentError}
+          onDismiss={() => setAgentError(null)}
+        />
+      )}
       {/* Header Banner */}
       <div className="glass-panel p-6 border-slate-800 bg-slate-900/90">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">

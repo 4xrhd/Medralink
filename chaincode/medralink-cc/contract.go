@@ -34,6 +34,9 @@ func (c *MedralinkContract) RegisterPatientReference(
 	if err := AssertZeroPII(patientRefHash, homeOrg); err != nil {
 		return nil, err
 	}
+	if err := ValidateHash(patientRefHash); err != nil {
+		return nil, err
+	}
 
 	exists, err := ctx.GetStub().GetState(patientRefHash)
 	if err != nil {
@@ -82,6 +85,9 @@ func (c *MedralinkContract) RegisterProvider(
 		return nil, fmt.Errorf("providerIDHash, org, and role are required")
 	}
 	if err := AssertZeroPII(providerIDHash, org, role, certSerial); err != nil {
+		return nil, err
+	}
+	if err := ValidateHash(providerIDHash); err != nil {
 		return nil, err
 	}
 
@@ -139,6 +145,11 @@ func (c *MedralinkContract) CreateRecordReference(
 	}
 	if err := AssertZeroPII(recordID, patientRefHash, recordType, recordHash, opaquePointerHash, custodialOrg, provenance); err != nil {
 		return nil, err
+	}
+	for _, hash := range []string{patientRefHash, recordHash, opaquePointerHash} {
+		if err := ValidateHash(hash); err != nil {
+			return nil, err
+		}
 	}
 	if err := ValidateScope([]string{recordType}); err != nil {
 		return nil, fmt.Errorf("invalid recordType: %v", err)
@@ -225,6 +236,9 @@ func (c *MedralinkContract) GrantConsent(
 		return nil, err
 	}
 	if err := AssertZeroPII(consentID, patientRefHash, grantee, purpose, expiryTimestamp, patientSig); err != nil {
+		return nil, err
+	}
+	if err := ValidateHash(patientRefHash); err != nil {
 		return nil, err
 	}
 
@@ -337,6 +351,11 @@ func (c *MedralinkContract) RequestAccess(
 	}
 	if err := AssertZeroPII(requestID, patientRefHash, consentID, accessorHash, scope, purpose); err != nil {
 		return nil, err
+	}
+	for _, hash := range []string{patientRefHash, accessorHash} {
+		if err := ValidateHash(hash); err != nil {
+			return nil, err
+		}
 	}
 
 	key := fmt.Sprintf("%s%s", PrefixConsent, consentID)
@@ -458,6 +477,11 @@ func (c *MedralinkContract) LogAccess(
 	if err := AssertZeroPII(requestID, patientRefHash, accessorHash, scope, purpose, status); err != nil {
 		return nil, err
 	}
+	for _, hash := range []string{patientRefHash, accessorHash} {
+		if err := ValidateHash(hash); err != nil {
+			return nil, err
+		}
+	}
 
 	timestamp = resolveTimestamp(ctx, timestamp)
 
@@ -525,6 +549,11 @@ func (c *MedralinkContract) InvokeEmergencyAccess(
 	}
 	if err := AssertZeroPII(emergencyID, clinicianIDHash, patientRefHash, reasonCode, expiryTimestamp); err != nil {
 		return nil, err
+	}
+	for _, hash := range []string{clinicianIDHash, patientRefHash} {
+		if err := ValidateHash(hash); err != nil {
+			return nil, err
+		}
 	}
 
 	key := fmt.Sprintf("%s%s", PrefixEmergency, emergencyID)
@@ -613,6 +642,11 @@ func (c *MedralinkContract) ReviewEmergencyAccess(
 	}
 	if err := AssertZeroPII(emergencyID, auditorIDHash, reviewStatus, findingsHash); err != nil {
 		return nil, err
+	}
+	for _, hash := range []string{auditorIDHash, findingsHash} {
+		if err := ValidateHash(hash); err != nil {
+			return nil, err
+		}
 	}
 
 	key := fmt.Sprintf("%s%s", PrefixEmergency, emergencyID)

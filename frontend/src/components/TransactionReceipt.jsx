@@ -70,7 +70,7 @@ export default function TransactionReceipt() {
           </div>
         </div>
 
-        <div className="mt-3 flex items-center justify-between text-[11px] text-slate-400 font-mono">
+        <div className="mt-3 flex items-center justify-between text-xs text-slate-400 font-mono">
           <span>Endorsement: OR(Org1MSP, Org2MSP)</span>
           <span className="text-slate-500">medralink-main</span>
         </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ShieldCheck, AlertOctagon, CheckCircle2, XCircle, Layers, RefreshCw, Database, Eye } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import ErrorBanner from '../components/ErrorBanner';
 
 export default function AuditorPortal() {
   const { showTransactionReceipt } = useAuth();
@@ -83,26 +84,25 @@ export default function AuditorPortal() {
       </div>
 
       {reviewFeedback && (
-        <div className={`p-4 rounded-xl border flex items-center justify-between text-xs animate-fade-in ${
-          reviewFeedback.type === 'success'
-            ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-300'
-            : 'bg-rose-950/40 border-rose-500/30 text-rose-300'
-        }`}>
-          <div className="flex items-center gap-2.5">
-            {reviewFeedback.type === 'success' ? (
+        reviewFeedback.type === 'error' ? (
+          <ErrorBanner
+            error={reviewFeedback.message}
+            onDismiss={() => setReviewFeedback(null)}
+          />
+        ) : (
+          <div className="p-4 rounded-xl border flex items-center justify-between text-xs animate-fade-in bg-emerald-950/40 border-emerald-500/30 text-emerald-300">
+            <div className="flex items-center gap-2.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-            ) : (
-              <AlertOctagon className="w-4 h-4 text-rose-400 shrink-0" />
-            )}
-            <span>{reviewFeedback.message}</span>
+              <span>{reviewFeedback.message}</span>
+            </div>
+            <button
+              onClick={() => setReviewFeedback(null)}
+              className="text-slate-400 hover:text-slate-200 ml-4 font-mono text-xs"
+            >
+              ✕
+            </button>
           </div>
-          <button
-            onClick={() => setReviewFeedback(null)}
-            className="text-slate-400 hover:text-slate-200 ml-4 font-mono text-[11px]"
-          >
-            ✕
-          </button>
-        </div>
+        )
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -113,7 +113,7 @@ export default function AuditorPortal() {
               <AlertOctagon className="w-4 h-4 text-rose-400" />
               Emergency Break-Glass Audit Reviews ({emergencyEvents.length})
             </h2>
-            <span className="text-[10px] font-mono text-slate-500">Tx: ReviewEmergencyAccess</span>
+            <span className="text-2xs font-mono text-slate-500">Tx: ReviewEmergencyAccess</span>
           </div>
 
           <p className="text-xs text-slate-400">
@@ -137,41 +137,41 @@ export default function AuditorPortal() {
                     </span>
                   </div>
 
-                  <div className="text-[11px] text-slate-300">
+                  <div className="text-xs text-slate-300">
                     Reason: <strong className="text-rose-300">{emg.reasonCode}</strong>
                   </div>
 
-                  <div className="text-[10px] font-mono text-slate-400">
+                  <div className="text-2xs font-mono text-slate-400">
                     Patient Ref: {emg.patientRefHash.substring(0, 20)}...
                   </div>
 
                   {(emg.reviewStatus === 'PENDING' || emg.reviewStatus === 'PENDING_DGHS_POST_HOC_REVIEW') ? (
-                    <div className="pt-2 border-t border-slate-800 space-y-2">
+                    <div className="pt-2 border-t border-slate-800 space-y-2.5">
                       <input
                         type="text"
-                        placeholder="Audit justification note..."
+                        placeholder="Enter auditor clinical justification note..."
                         value={findingsNote}
                         onChange={(e) => setFindingsNote(e.target.value)}
-                        className="w-full bg-slate-900 border border-slate-750 rounded px-2.5 py-1 text-xs text-slate-200"
+                        className="w-full bg-slate-900 border border-slate-750 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500/70 focus:ring-1 focus:ring-amber-500/40 transition-all"
                       />
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleReview(emg.emergencyId, 'APPROPRIATE')}
-                          className="flex-1 py-1.5 rounded bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 font-medium text-xs flex items-center justify-center gap-1 transition-colors"
+                          className="flex-1 py-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 font-medium text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                         >
                           <CheckCircle2 className="w-3.5 h-3.5" /> Mark APPROPRIATE
                         </button>
                         <button
                           onClick={() => handleReview(emg.emergencyId, 'INAPPROPRIATE')}
-                          className="flex-1 py-1.5 rounded bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 font-medium text-xs flex items-center justify-center gap-1 transition-colors"
+                          className="flex-1 py-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 font-medium text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                         >
                           <XCircle className="w-3.5 h-3.5" /> Flag INAPPROPRIATE
                         </button>
                       </div>
                     </div>
                   ) : (
-                    <div className="text-[10px] font-mono text-teal-400 bg-slate-900/80 p-2 rounded border border-slate-800">
-                      Auditor Findings Hash: {emg.findingsHash?.substring(0, 24)}... (Reviewed)
+                    <div className="text-2xs font-mono text-teal-400 bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
+                      Auditor Findings Hash: {emg.findingsHash?.substring(0, 24)}... (DGHS Reviewed)
                     </div>
                   )}
                 </div>
@@ -187,7 +187,7 @@ export default function AuditorPortal() {
               <Layers className="w-4 h-4 text-teal-400" />
               Hyperledger Fabric Block Explorer
             </h2>
-            <span className="badge-status badge-granted text-[10px]">Channel: medralink-main</span>
+            <span className="badge-status badge-granted text-2xs">Channel: medralink-main</span>
           </div>
 
           <p className="text-xs text-slate-400">
@@ -199,10 +199,10 @@ export default function AuditorPortal() {
               <div key={blk.blockNumber} className="bg-slate-950/70 border border-slate-800 p-3.5 rounded-lg text-xs space-y-2 font-mono">
                 <div className="flex items-center justify-between">
                   <span className="text-teal-400 font-bold">Block #{blk.blockNumber}</span>
-                  <span className="text-[10px] text-slate-500">{new Date(blk.timestamp).toLocaleTimeString()}</span>
+                  <span className="text-2xs text-slate-500">{new Date(blk.timestamp).toLocaleTimeString()}</span>
                 </div>
 
-                <div className="text-[10px] text-slate-400 space-y-1">
+                <div className="text-2xs text-slate-400 space-y-1">
                   <div className="truncate">
                     <span className="text-slate-600">Data Hash: </span>
                     <span className="text-slate-300">{blk.dataHash}</span>
@@ -216,7 +216,7 @@ export default function AuditorPortal() {
                 {blk.transactions && blk.transactions.length > 0 && (
                   <div className="space-y-1 pt-1">
                     {blk.transactions.map((tx) => (
-                      <div key={tx.txId} className="p-2 bg-slate-900 rounded border border-slate-800 text-[10px]">
+                      <div key={tx.txId} className="p-2 bg-slate-900 rounded border border-slate-800 text-2xs">
                         <span className="text-teal-400 font-semibold">{tx.txType}</span>
                         <span className="text-slate-500 block truncate">TxId: {tx.txId}</span>
                       </div>

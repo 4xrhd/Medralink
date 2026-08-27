@@ -669,7 +669,7 @@ test('25. Synthetic Identity Verification & Salted Pseudonym Hashes', () => {
   // Predefined synthetic patient list
   const list = getSyntheticPatientList();
   assert.ok(Array.isArray(list));
-  assert.equal(list.length, 3);
+  assert.ok(list.length >= 6);
   assert.ok(list[0].patientRefHash);
 });
 

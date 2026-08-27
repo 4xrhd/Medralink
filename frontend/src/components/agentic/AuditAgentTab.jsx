@@ -21,7 +21,7 @@ export default function AuditAgentTab({
       <button
         onClick={onRunAuditScan}
         disabled={loading}
-        className="px-4 py-2 rounded-lg bg-amber-700 hover:bg-amber-600 text-white font-medium text-xs flex items-center gap-2 shadow-sm cursor-pointer disabled:opacity-50 transition-colors"
+        className="px-4 py-2.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-medium text-xs flex items-center gap-2 shadow-sm cursor-pointer disabled:opacity-50 transition-colors"
       >
         {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
         Execute Forensic Ledger Scan
@@ -31,7 +31,7 @@ export default function AuditAgentTab({
         <div className="p-4 rounded-lg bg-slate-950/70 border border-slate-800 space-y-4">
           <div className="flex items-center justify-between border-b border-slate-800 pb-3">
             <span className="text-xs font-bold text-slate-200">Forensic Scan Status: {agentOutput.data.auditScanStatus}</span>
-            <span className="text-[10px] font-mono text-slate-400">
+            <span className="text-2xs font-mono text-slate-400">
               {agentOutput.data.scannedTelemetry?.blocks || 0} Blocks • {agentOutput.data.scannedTelemetry?.transactions || 0} Transactions Scanned
             </span>
           </div>
@@ -40,7 +40,7 @@ export default function AuditAgentTab({
               {agentOutput.data.findings.map((f, idx) => (
                 <div key={idx} className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-xs flex items-center justify-between">
                   <span className="font-medium text-slate-300">{f.metric}: {f.details}</span>
-                  <span className="text-emerald-400 font-medium font-mono text-[10px]">{f.status}</span>
+                  <span className="text-emerald-400 font-medium font-mono text-2xs">{f.status}</span>
                 </div>
               ))}
             </div>

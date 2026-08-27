@@ -130,3 +130,15 @@ func AssertZeroPII(fields ...string) error {
 	}
 	return nil
 }
+
+// ValidateHash ensures the provided string is a valid SHA-256 hex string (64 characters)
+func ValidateHash(hash string) error {
+	if hash == "" {
+		return nil
+	}
+	matched, _ := regexp.MatchString("^[a-fA-F0-9]{64}$", hash)
+	if !matched {
+		return fmt.Errorf("cryptographic integrity violation: expected 64-character hex SHA-256 hash, received invalid format")
+	}
+	return nil
+}

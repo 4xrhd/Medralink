@@ -34,11 +34,8 @@ export default function Navbar({ onOpenDemoTour }) {
           <div>
             <div className="flex items-center gap-2">
               <span className="font-bold text-base text-slate-100 tracking-tight">Medra<span className="text-teal-400">Link</span></span>
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 text-slate-300 border border-slate-700 font-mono">
-                BCOLBD 2026
-              </span>
             </div>
-            <p className="text-[11px] text-slate-400 hidden sm:block">Decentralized Healthcare Data Interoperability & Audit Provenance</p>
+            <p className="text-xs text-slate-400 hidden sm:block">Decentralized Healthcare Data Interoperability & Audit Provenance</p>
           </div>
         </div>
 
@@ -83,14 +80,14 @@ export default function Navbar({ onOpenDemoTour }) {
               {getRoleIcon(currentRole)}
               <div className="text-left hidden sm:block">
                 <span className="font-medium block leading-tight">{activeRoleObj.label}</span>
-                <span className="text-[10px] text-slate-400 leading-tight">{activeRoleObj.msp}</span>
+                <span className="text-2xs text-slate-400 leading-tight">{activeRoleObj.msp}</span>
               </div>
               <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-1" />
             </button>
 
             {roleDropdownOpen && (
               <div className="absolute right-0 mt-2 w-64 glass-panel p-1.5 text-xs shadow-xl z-50 animate-in fade-in">
-                <div className="px-3 py-1.5 text-[10px] uppercase font-semibold text-slate-500 tracking-wider">
+                <div className="px-3 py-1.5 text-2xs uppercase font-semibold text-slate-500 tracking-wider">
                   Switch Portal Role (5 Roles)
                 </div>
                 {DEMO_ROLES.map((role) => (
@@ -109,7 +106,7 @@ export default function Navbar({ onOpenDemoTour }) {
                     {getRoleIcon(role.id)}
                     <div>
                       <div className="font-medium">{role.label}</div>
-                      <div className="text-[10px] text-slate-400">{role.org}</div>
+                      <div className="text-2xs text-slate-400">{role.org}</div>
                     </div>
                   </button>
                 ))}

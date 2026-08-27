@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Play, CheckCircle, ArrowRight, RefreshCw, X, Shield, Activity, Lock, AlertOctagon } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import ErrorBanner from './ErrorBanner';
 
 const DEMO_STEPS = [
   {
@@ -286,6 +287,7 @@ export default function DemoTourModal({ isOpen, onClose }) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [stepResults, setStepResults] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [tourError, setTourError] = useState(null);
   const [demoState, setDemoState] = useState({
     patientRefHash: '2a3d56a3872ecb0d392877404798d4fd5a5b77b6f478928cf3fed661c7d3fde1',
   });
@@ -297,6 +299,7 @@ export default function DemoTourModal({ isOpen, onClose }) {
 
   const runCurrentStep = async () => {
     setIsLoading(true);
+    setTourError(null);
     if (currentStep.role) {
       localStorage.setItem('medralink_demo_role', currentStep.role);
       switchRole(currentStep.role);
@@ -311,7 +314,7 @@ export default function DemoTourModal({ isOpen, onClose }) {
       });
     } catch (err) {
       console.error(err);
-      alert(`Step ${currentStep.step} error: ${err.message}`);
+      setTourError(`Step ${currentStep.step} error: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -359,8 +362,8 @@ export default function DemoTourModal({ isOpen, onClose }) {
               9
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-100">BCOLBD 2026 Live Prototype Demo Tour</h2>
-              <p className="text-xs text-slate-400">9-Step Vertical Slice Verification Flow (Matches Whitepaper Section G)</p>
+              <h2 className="text-base font-bold text-slate-100">Live Prototype Demo Tour</h2>
+              <p className="text-xs text-slate-400">9-Step Vertical Slice Verification Flow (Matches Architecture Specifications)</p>
             </div>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-200 transition-colors">
@@ -388,14 +391,18 @@ export default function DemoTourModal({ isOpen, onClose }) {
 
         {/* Active Step Content */}
         <div className="bg-slate-950/60 border border-slate-800 p-5 rounded-lg flex-1 overflow-y-auto custom-scrollbar space-y-4">
+          {tourError && (
+            <ErrorBanner error={tourError} onDismiss={() => setTourError(null)} />
+          )}
+
           <div className="flex items-start justify-between">
             <div>
-              <span className="text-[11px] font-semibold text-teal-400 tracking-wider uppercase font-mono">
+              <span className="text-xs font-semibold text-teal-400 tracking-wider uppercase font-mono">
                 Step {currentStep.step} of 9
               </span>
               <h3 className="text-sm font-bold text-slate-100 mt-0.5">{currentStep.title}</h3>
             </div>
-            <span className="badge-status badge-granted font-mono text-[10px]">
+            <span className="badge-status badge-granted font-mono text-2xs">
               Tx: {currentStep.txName}
             </span>
           </div>
@@ -404,11 +411,11 @@ export default function DemoTourModal({ isOpen, onClose }) {
 
           <div className="grid grid-cols-2 gap-3 text-xs bg-slate-900/80 p-3 rounded-lg border border-slate-800">
             <div>
-              <span className="text-slate-500 block text-[11px]">Invoking Actor:</span>
+              <span className="text-slate-500 block text-2xs">Invoking Actor:</span>
               <span className="text-slate-300 font-medium">{currentStep.actor}</span>
             </div>
             <div>
-              <span className="text-slate-500 block text-[11px]">Blockchain Channel:</span>
+              <span className="text-slate-500 block text-2xs">Blockchain Channel:</span>
               <span className="text-slate-300 font-mono">medralink-main</span>
             </div>
           </div>
@@ -420,7 +427,7 @@ export default function DemoTourModal({ isOpen, onClose }) {
                 <CheckCircle className="w-4 h-4 text-emerald-400" />
                 <span>Execution Verified on Ledger</span>
               </div>
-              <pre className="text-[11px] text-slate-300 overflow-x-auto p-2 bg-slate-950 rounded border border-slate-800">
+              <pre className="text-2xs text-slate-300 overflow-x-auto p-2 bg-slate-950 rounded border border-slate-800">
                 {JSON.stringify(stepResults[currentStep.step], null, 2)}
               </pre>
             </div>

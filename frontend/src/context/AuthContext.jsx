@@ -17,6 +17,7 @@ export function AuthProvider({ children }) {
     localStorage.getItem('medralink_demo_role') || 'Patient'
   );
   const [activePatient, setActivePatient] = useState(null);
+  const [patientsList, setPatientsList] = useState([]);
   const [recentTransaction, setRecentTransaction] = useState(null);
   const [networkStatus, setNetworkStatus] = useState(null);
 
@@ -29,6 +30,7 @@ export function AuthProvider({ children }) {
     api.getSyntheticPatients()
       .then((res) => {
         if (res.patients && res.patients.length > 0) {
+          setPatientsList(res.patients);
           setActivePatient(res.patients[0]);
         }
       })
@@ -42,6 +44,13 @@ export function AuthProvider({ children }) {
   const switchRole = (role) => {
     localStorage.setItem('medralink_demo_role', role);
     setCurrentRole(role);
+  };
+
+  const selectPatient = (syntheticId) => {
+    const found = patientsList.find((p) => p.syntheticId === syntheticId);
+    if (found) {
+      setActivePatient(found);
+    }
   };
 
   const showTransactionReceipt = (txData) => {
@@ -64,6 +73,8 @@ export function AuthProvider({ children }) {
         switchRole,
         activePatient,
         setActivePatient,
+        patientsList,
+        selectPatient,
         recentTransaction,
         showTransactionReceipt,
         closeReceipt,

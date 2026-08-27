@@ -11,7 +11,7 @@ const DEMO_USERS = {
     dob: '1992-05-14',
   },
   clinician: {
-    id: 'clinician_dr_hasan',
+    id: 'DR_HASAN_CLINICIAN',
     role: 'Clinician',
     name: 'Dr. Hasan Mahmud',
     hospital: 'Hospital A (Pilot)',

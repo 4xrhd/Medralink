@@ -22,9 +22,10 @@ import {
 } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import ErrorBanner from '../components/ErrorBanner';
 
 export default function ClinicianPortal() {
-  const { activePatient, showTransactionReceipt } = useAuth();
+  const { activePatient, patientsList, selectPatient, showTransactionReceipt } = useAuth();
 
   // Access Request Form State
   const [patientRefHash, setPatientRefHash] = useState(
@@ -210,46 +211,70 @@ export default function ClinicianPortal() {
             </h2>
 
             <form onSubmit={(e) => handleFetchRecord(e)} className="space-y-4">
+              {/* Quick Select Synthetic Patient */}
+              {patientsList?.length > 0 && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Select Patient Case (1-Click Fill)
+                  </label>
+                  <select
+                    value={activePatient?.syntheticId || ''}
+                    onChange={(e) => {
+                      selectPatient(e.target.value);
+                      const sel = patientsList.find(p => p.syntheticId === e.target.value);
+                      if (sel?.patientRefHash) setPatientRefHash(sel.patientRefHash);
+                    }}
+                    className="w-full bg-slate-950/80 border border-slate-750 rounded-lg px-3.5 py-2.5 text-xs text-teal-300 focus:outline-none focus:border-sky-500/70 focus:ring-1 focus:ring-sky-500/40 transition-all font-medium"
+                  >
+                    {patientsList.map((p) => (
+                      <option key={p.syntheticId} value={p.syntheticId}>
+                        {p.name} | {p.primaryCondition || p.bloodGroup}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">Patient Ref Hash</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">Patient Ref Hash</label>
                 <input
                   type="text"
                   value={patientRefHash}
                   onChange={(e) => setPatientRefHash(e.target.value)}
-                  className="w-full bg-slate-950/70 border border-slate-750 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 focus:outline-none focus:border-sky-500/70"
+                  className="w-full bg-slate-950/80 border border-slate-750 rounded-lg px-3.5 py-2.5 text-xs font-mono text-slate-200 focus:outline-none focus:border-sky-500/70 focus:ring-1 focus:ring-sky-500/40 transition-all"
                   placeholder="Paste pseudonymous patientRefHash..."
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">Target Record ID (Optional - Auto-resolves)</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">Target Record ID (Optional - Auto-resolves)</label>
                 <input
                   type="text"
                   value={recordId}
                   onChange={(e) => setRecordId(e.target.value)}
-                  className="w-full bg-slate-950/70 border border-slate-750 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 focus:outline-none focus:border-sky-500/70"
+                  className="w-full bg-slate-950/80 border border-slate-750 rounded-lg px-3.5 py-2.5 text-xs font-mono text-slate-200 focus:outline-none focus:border-sky-500/70 focus:ring-1 focus:ring-sky-500/40 transition-all"
                   placeholder="Leave empty to use latest patient record..."
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">Consent Token UUID (Optional - Auto-resolves)</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">Consent Token UUID (Optional - Auto-resolves)</label>
                 <input
                   type="text"
                   value={consentId}
                   onChange={(e) => setConsentId(e.target.value)}
-                  className="w-full bg-slate-950/70 border border-slate-750 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 focus:outline-none focus:border-sky-500/70"
+                  className="w-full bg-slate-950/80 border border-slate-750 rounded-lg px-3.5 py-2.5 text-xs font-mono text-slate-200 focus:outline-none focus:border-sky-500/70 focus:ring-1 focus:ring-sky-500/40 transition-all"
                   placeholder="Leave empty to use active on-chain consent..."
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">Access Purpose</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">Access Purpose</label>
                 <select
                   value={purpose}
                   onChange={(e) => setPurpose(e.target.value)}
-                  className="w-full bg-slate-950/70 border border-slate-750 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500/70"
+                  className="w-full bg-slate-950/80 border border-slate-750 rounded-lg px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500/70 focus:ring-1 focus:ring-sky-500/40 transition-all"
                 >
                   <option value="treatment">Clinical Treatment (treatment)</option>
                   <option value="emergency">Emergency Pre-Authorization (emergency)</option>
@@ -300,14 +325,14 @@ export default function ClinicianPortal() {
                     className="p-3 bg-slate-950/70 border border-slate-800 rounded-lg text-xs space-y-1.5 hover:border-slate-700 transition-colors"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-slate-200 font-mono text-[11px]">
+                      <span className="font-semibold text-slate-200 font-mono text-xs">
                         {rec.fhirResourceType || rec.recordType || 'FHIR Bundle'}
                       </span>
-                      <span className="text-[10px] text-slate-400 font-mono">
+                      <span className="text-2xs text-slate-400 font-mono">
                         {rec.custodialOrg || 'Org1MSP'}
                       </span>
                     </div>
-                    <div className="text-[10px] font-mono text-slate-500 truncate">
+                    <div className="text-2xs font-mono text-slate-500 truncate">
                       ID: {rec.recordId}
                     </div>
                     <button
@@ -316,7 +341,7 @@ export default function ClinicianPortal() {
                         handleFetchRecord(null, rec.recordId);
                       }}
                       disabled={isVerifying}
-                      className="w-full mt-1 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-750 text-[11px] text-sky-400 flex items-center justify-center gap-1 transition-colors"
+                      className="w-full mt-1 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-755 text-xs text-sky-400 flex items-center justify-center gap-1 transition-colors"
                     >
                       <Lock className="w-3 h-3" /> Select & Decrypt
                     </button>
@@ -362,16 +387,11 @@ export default function ClinicianPortal() {
         {/* Right 2 Columns: Decrypted Records & On/Off-Chain Split View */}
         <div className="lg:col-span-2 space-y-6">
           {accessError && (
-            <div className="p-4 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-3">
-              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-              <div>
-                <div className="font-bold text-rose-200">Access Denied by Smart Contract</div>
-                <div className="mt-1">{accessError}</div>
-                <div className="mt-2 text-[11px] text-rose-400/80 font-mono">
-                  Chaincode Status: RequestAccess → LogAccess (DENIED / CONSENT_REVOKED)
-                </div>
-              </div>
-            </div>
+            <ErrorBanner
+              error={accessError}
+              onDismiss={() => setAccessError(null)}
+              className="mb-4"
+            />
           )}
 
           {decryptedRecord ? (
@@ -383,12 +403,12 @@ export default function ClinicianPortal() {
                     <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                     On-Chain Cryptographic Proof Verified
                   </span>
-                  <span className="badge-status badge-granted text-[10px]">STATUS: AUTHORIZED</span>
+                  <span className="badge-status badge-granted text-2xs">STATUS: AUTHORIZED</span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs font-mono bg-slate-950/70 p-3 rounded-lg border border-slate-800">
                   <div>
                     <span className="text-slate-500 block">Record Integrity Hash (SHA-256):</span>
-                    <span className="text-slate-300 text-[11px] break-all">{decryptedRecord.recordHash}</span>
+                    <span className="text-slate-300 text-xs break-all">{decryptedRecord.recordHash}</span>
                   </div>
                   <div>
                     <span className="text-slate-500 block">Custodial Storage Organization:</span>
@@ -438,13 +458,13 @@ export default function ClinicianPortal() {
                       <span>HL7 FHIR R4 JSON Schema (Bundle/collection)</span>
                       <button
                         onClick={handleCopyJson}
-                        className="px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-750 text-slate-300 flex items-center gap-1 text-[11px] transition-colors"
+                        className="px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-750 text-slate-300 flex items-center gap-1 text-xs transition-colors"
                       >
                         {copiedJson ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                         {copiedJson ? 'Copied' : 'Copy JSON'}
                       </button>
                     </div>
-                    <pre className="bg-slate-950 p-4 rounded-lg border border-slate-800 text-[11px] font-mono text-slate-300 max-h-96 overflow-y-auto custom-scrollbar">
+                    <pre className="bg-slate-950 p-4 rounded-lg border border-slate-800 text-xs font-mono text-slate-300 max-h-96 overflow-y-auto custom-scrollbar">
                       {JSON.stringify(decryptedRecord.fhirBundle, null, 2)}
                     </pre>
                   </div>
@@ -478,7 +498,7 @@ export default function ClinicianPortal() {
                               )}
                               {res.resourceType}
                             </span>
-                            <span className="text-slate-500 font-mono text-[10px]">ID: {res.id?.substring(0, 16)}</span>
+                            <span className="text-slate-500 font-mono text-2xs">ID: {res.id?.substring(0, 16)}</span>
                           </div>
 
                           {/* AllergyIntolerance */}
@@ -486,7 +506,7 @@ export default function ClinicianPortal() {
                             <div className="bg-rose-500/10 border border-rose-500/30 p-3 rounded-lg text-rose-200 space-y-1">
                               <strong className="block text-rose-300 font-semibold">Critical Allergen Warning:</strong>
                               <div>{res.code?.text || 'Penicillin Allergy'}</div>
-                              <div className="text-[10px] text-rose-400 font-mono">
+                              <div className="text-2xs text-rose-400 font-mono">
                                 SNOMED-CT: {res.code?.coding?.[0]?.code || '373270004'} • Criticality:{' '}
                                 {res.criticality?.toUpperCase() || 'HIGH'} • Status:{' '}
                                 {res.verificationStatus?.coding?.[0]?.display || 'Confirmed'}
@@ -499,7 +519,7 @@ export default function ClinicianPortal() {
                             <div className="bg-slate-900 border border-slate-750 p-3 rounded-lg text-slate-200 space-y-1">
                               <strong className="block text-sky-300 font-semibold">Active Prescription:</strong>
                               <div>{res.medicationCodeableConcept?.text || 'Prescription Medication'}</div>
-                              <div className="text-[10px] text-slate-400 font-mono">
+                              <div className="text-2xs text-slate-400 font-mono">
                                 Dosage: {res.dosageInstruction?.[0]?.text || 'Standard'} • RxNorm:{' '}
                                 {res.medicationCodeableConcept?.coding?.[0]?.code || '860975'} • Status:{' '}
                                 {res.status?.toUpperCase() || 'ACTIVE'}
@@ -512,7 +532,7 @@ export default function ClinicianPortal() {
                             <div className="bg-slate-900 border border-slate-750 p-3 rounded-lg text-slate-200 space-y-1">
                               <strong className="block text-amber-300 font-semibold">Clinical Condition:</strong>
                               <div>{res.code?.text || 'Clinical Diagnosis'}</div>
-                              <div className="text-[10px] text-slate-400 font-mono">
+                              <div className="text-2xs text-slate-400 font-mono">
                                 SNOMED-CT: {res.code?.coding?.[0]?.code || '44054006'} • Status:{' '}
                                 {res.clinicalStatus?.coding?.[0]?.display || 'Active'}
                               </div>
@@ -528,12 +548,12 @@ export default function ClinicianPortal() {
                               <div className="text-slate-100 font-semibold">
                                 Value: {res.valueQuantity?.value} {res.valueQuantity?.unit}
                                 {res.interpretation?.[0]?.coding?.[0]?.code === 'H' && (
-                                  <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40">
+                                  <span className="ml-2 text-2xs px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40">
                                     HIGH
                                   </span>
                                 )}
                               </div>
-                              <div className="text-[10px] text-slate-400 font-mono">
+                              <div className="text-2xs text-slate-400 font-mono">
                                 LOINC: {res.code?.coding?.[0]?.code || '1558-6'} • Normal Range:{' '}
                                 {res.referenceRange?.[0]?.low?.value} - {res.referenceRange?.[0]?.high?.value}{' '}
                                 {res.referenceRange?.[0]?.low?.unit}
@@ -548,7 +568,7 @@ export default function ClinicianPortal() {
                                 {res.code?.text || 'Diagnostic Report'}:
                               </strong>
                               <div>{res.conclusion || 'No conclusion text available'}</div>
-                              <div className="text-[10px] text-slate-400 font-mono">
+                              <div className="text-2xs text-slate-400 font-mono">
                                 LOINC: {res.code?.coding?.[0]?.code || '1558-6'} • Status:{' '}
                                 {res.status?.toUpperCase() || 'FINAL'}
                               </div>
@@ -561,10 +581,10 @@ export default function ClinicianPortal() {
                               <strong className="block text-slate-300 font-semibold">
                                 Pseudonymized Patient Identity:
                               </strong>
-                              <div className="text-[11px] font-mono text-teal-400">
+                              <div className="text-xs font-mono text-teal-400">
                                 Ref Hash: {res.identifier?.[0]?.value || 'Salted SHA-256'}
                               </div>
-                              <div className="text-[10px] text-slate-400 font-mono">
+                              <div className="text-2xs text-slate-400 font-mono">
                                 Gender: {res.gender} • Birth Date: {res.birthDate} • Active: {String(res.active)}
                               </div>
                             </div>
@@ -577,9 +597,21 @@ export default function ClinicianPortal() {
               </div>
             </div>
           ) : (
-            <div className="glass-panel p-12 text-center text-slate-500 text-xs border-dashed border-slate-800">
-              <Lock className="w-6 h-6 text-slate-600 mx-auto mb-2" />
-              Use query panel on the left or select an on-chain record reference to verify patient consent and decrypt FHIR clinical resources.
+            <div className="glass-panel p-10 text-center text-slate-400 text-xs border-dashed border-slate-800 space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 mx-auto">
+                <Lock className="w-6 h-6" />
+              </div>
+              <div className="max-w-md mx-auto space-y-1.5">
+                <h3 className="text-sm font-bold text-slate-200">Consent-Gated Health Records Vault</h3>
+                <p className="text-slate-400 text-xs leading-relaxed">
+                  Clinical records remain encrypted with AES-256-GCM in custodial hospital repositories. Click <strong>"Verify On-Chain & Decrypt FHIR"</strong> or select a record reference on the left to verify active consent and unlock the clinical view.
+                </p>
+              </div>
+              <div className="pt-2 flex flex-wrap items-center justify-center gap-2 text-xs font-mono text-slate-500">
+                <span className="px-2 py-1 rounded bg-slate-950 border border-slate-850">HL7 FHIR R4 Bundle</span>
+                <span className="px-2 py-1 rounded bg-slate-950 border border-slate-850">SHA-256 Record Hash Verification</span>
+                <span className="px-2 py-1 rounded bg-slate-950 border border-slate-850">Immutable Access Logging</span>
+              </div>
             </div>
           )}
         </div>

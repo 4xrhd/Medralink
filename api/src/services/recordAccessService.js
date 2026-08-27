@@ -53,7 +53,7 @@ class RecordAccessService {
       algorithm: encryptedPayload.algorithm,
       txId: anchorResult.txId,
       blockNumber: anchorResult.blockNumber,
-      warning: 'SYNTHETIC DATA — ZERO PII STORED ON-CHAIN',
+      warning: 'SYNTHETIC DATA | ZERO PII STORED ON-CHAIN',
     };
   }
 

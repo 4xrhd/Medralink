@@ -7,10 +7,10 @@ export default function Banner() {
       <div className="flex items-center gap-2 font-normal text-slate-300">
         <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
         <span>
-          <strong className="text-slate-200 font-semibold">BCOLBD 2026 PROTOTYPE:</strong> Synthetic Data & Mock Adapter — Zero PII / NID stored on blockchain ledger.
+          <strong className="text-slate-200 font-semibold">PROTOTYPE ENVIRONMENT:</strong> Synthetic Data & Mock Adapter | Zero PII / NID stored on blockchain ledger.
         </span>
       </div>
-      <div className="flex items-center gap-3 mt-1 sm:mt-0 text-slate-400 text-[11px]">
+      <div className="flex items-center gap-3 mt-1 sm:mt-0 text-slate-400 text-xs">
         <span className="flex items-center gap-1 text-slate-300">
           <ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
           Zero PII on Ledger

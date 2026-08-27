@@ -210,6 +210,11 @@ class FabricLedgerService extends EventEmitter {
       throw new Error("Wildcard scope '*' is prohibited under PDPO 2025 data minimization principles");
     }
 
+    const expiry = new Date(expiryTimestamp);
+    if (isNaN(expiry.getTime())) {
+      throw new Error(`Invalid expiryTimestamp format: ${expiryTimestamp}`);
+    }
+
     const consent = {
       docType: 'Consent',
       consentId,
@@ -286,20 +291,13 @@ class FabricLedgerService extends EventEmitter {
       consent.grantee &&
       consent.grantee !== 'ALL' &&
       consent.grantee !== accessorHash &&
-      sha256(accessorHash) !== consent.grantee
+      sha256(accessorHash) !== consent.grantee // Fallback for when raw ID is passed instead of hash
     ) {
-      const accTokens = accessorHash.toLowerCase().split(/[^a-z0-9]+/);
-      const granTokens = consent.grantee.toLowerCase().split(/[^a-z0-9]+/);
-      const hasMatch = accTokens.some(t => t.length > 2 && granTokens.includes(t)) ||
-                       consent.grantee.toLowerCase() === 'clinician' ||
-                       consent.grantee.toLowerCase() === 'org1msp';
-      if (!hasMatch) {
-        return {
-          allowed: false,
-          status: 'DENIED',
-          reason: `Accessor '${accessorHash}' not authorized by consent grantee '${consent.grantee}'`,
-        };
-      }
+      return {
+        allowed: false,
+        status: 'DENIED',
+        reason: `Accessor '${accessorHash}' not authorized by consent grantee '${consent.grantee}'`,
+      };
     }
 
     if (scope && !consent.scope.includes(scope)) {

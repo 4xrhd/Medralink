@@ -7,7 +7,8 @@ import (
 	"github.com/hyperledger/fabric-contract-api-go/v2/contractapi"
 )
 
-// resolveTimestamp returns the provided timestamp if non-empty, otherwise resolves the transaction or current UTC timestamp.
+// resolveTimestamp returns the provided timestamp if non-empty, otherwise resolves the transaction UTC timestamp.
+// To ensure Hyperledger Fabric determinism, we strictly rely on GetTxTimestamp and never use time.Now()
 func resolveTimestamp(ctx contractapi.TransactionContextInterface, providedTimestamp string) string {
 	if providedTimestamp != "" {
 		return providedTimestamp
@@ -16,7 +17,8 @@ func resolveTimestamp(ctx contractapi.TransactionContextInterface, providedTimes
 	if err == nil && txTime != nil && txTime.Seconds > 0 {
 		return time.Unix(txTime.Seconds, int64(txTime.Nanos)).UTC().Format(time.RFC3339)
 	}
-	return time.Now().UTC().Format(time.RFC3339)
+	// Fallback to Unix epoch zero if stub timestamp completely fails (rare, but keeps determinism)
+	return time.Unix(0, 0).UTC().Format(time.RFC3339)
 }
 
 // getStatesByPartialCompositeKey iterates through a partial composite key and fetches the underlying documents.

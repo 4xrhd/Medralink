@@ -26,14 +26,14 @@ export default function FHIRAgentTab({
           rows={4}
           value={rawNotesInput}
           onChange={(e) => setRawNotesInput(e.target.value)}
-          className="w-full bg-slate-950/70 border border-slate-800 rounded-lg p-3 text-xs font-mono text-slate-200 focus:outline-none focus:border-teal-500/60"
+          className="w-full bg-slate-950/80 border border-slate-750 rounded-lg p-3 text-xs font-mono text-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/40 transition-all leading-relaxed"
         />
       </div>
 
       <button
         onClick={onRunFHIRAgent}
         disabled={loading}
-        className="px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-medium text-xs flex items-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
+        className="px-4 py-2.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-medium text-xs flex items-center gap-2 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
       >
         {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
         Run FHIRAgent Normalization
@@ -43,7 +43,7 @@ export default function FHIRAgentTab({
         <div className="p-4 rounded-lg bg-slate-950/70 border border-slate-800 space-y-4">
           <div className="flex items-center justify-between border-b border-slate-800 pb-3">
             <span className="text-xs font-bold text-slate-200">FHIRAgent Normalization Report</span>
-            <span className="text-[10px] font-mono text-teal-400">
+            <span className="text-2xs font-mono text-teal-400">
               {agentOutput.data.ontologySummary?.snomedCount || 0} SNOMED • {agentOutput.data.ontologySummary?.rxnormCount || 0} RxNorm • {agentOutput.data.ontologySummary?.loincCount || 0} LOINC
             </span>
           </div>
@@ -57,7 +57,7 @@ export default function FHIRAgentTab({
               ))}
             </div>
           )}
-          <pre className="p-3 bg-slate-900/90 rounded-lg text-[11px] font-mono text-emerald-300 overflow-x-auto max-h-60 border border-slate-800">
+          <pre className="p-3 bg-slate-900/90 rounded-lg text-xs font-mono text-emerald-300 overflow-x-auto max-h-60 border border-slate-800">
             {JSON.stringify(agentOutput.data.bundle, null, 2)}
           </pre>
         </div>

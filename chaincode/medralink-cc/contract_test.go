@@ -47,6 +47,19 @@ func TestValidationRules(t *testing.T) {
 	assert.Error(t, AssertZeroPII("+8801712345678"))      // Raw BD phone number detected
 }
 
+func TestValidateHash(t *testing.T) {
+	validHash := "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+	assert.NoError(t, ValidateHash(validHash))
+	assert.NoError(t, ValidateHash("")) // empty is handled by caller
+
+	// Invalid hashes
+	assert.Error(t, ValidateHash("not_a_hash"))
+	assert.Error(t, ValidateHash("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b85")) // 63 chars
+	assert.Error(t, ValidateHash("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b8555")) // 65 chars
+	assert.NoError(t, ValidateHash("E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855")) // Upper case is valid hex
+	assert.Error(t, ValidateHash("z3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")) // Non-hex character
+}
+
 func TestExpiryCheck(t *testing.T) {
 	now := time.Now().UTC()
 	future := now.Add(24 * time.Hour).Format(time.RFC3339)

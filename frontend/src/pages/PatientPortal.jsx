@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Shield, Lock, Trash2, Plus, Clock, FileText, CheckCircle, AlertCircle, History, RefreshCw, Eye, X } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import ErrorBanner from '../components/ErrorBanner';
 
 export default function PatientPortal() {
-  const { activePatient, showTransactionReceipt } = useAuth();
+  const { activePatient, patientsList, selectPatient, showTransactionReceipt } = useAuth();
   const [consents, setConsents] = useState([]);
   const [auditTrail, setAuditTrail] = useState([]);
   const [records, setRecords] = useState([]);
@@ -131,23 +132,55 @@ export default function PatientPortal() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Patient Profile & Bangladesh Smart Health Card */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 glass-panel p-6 border-slate-800 flex flex-col justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-200 font-bold text-lg">
-              {activePatient?.name?.substring(0, 2) || 'RC'}
+        <div className="lg:col-span-2 glass-panel p-6 border-slate-800 flex flex-col justify-between gap-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-teal-900/30 border border-teal-700/50 flex items-center justify-center text-teal-300 font-bold text-lg shrink-0 shadow-inner">
+                {activePatient?.name?.substring(0, 2) || 'RC'}
+              </div>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-xl font-bold text-slate-100 truncate">{activePatient?.name || 'Rahim Chowdhury (Synthetic)'}</h1>
+                  <span className="badge-status badge-granted text-2xs">Verified Synthetic Citizen</span>
+                </div>
+                <div className="text-xs text-slate-400 mt-1 flex flex-wrap items-center gap-3 font-mono">
+                  <span>Synthetic ID: <strong className="text-slate-300">{activePatient?.syntheticId || 'BD-HEALTH-994821'}</strong></span>
+                  <span>•</span>
+                  <span>Blood: <strong className="text-rose-400">{activePatient?.bloodGroup || 'B+'}</strong></span>
+                  <span>•</span>
+                  <span>Facility: <strong className="text-slate-300">{activePatient?.hospitalName || activePatient?.homeOrg || 'Org1MSP'}</strong></span>
+                </div>
+              </div>
+            </div>
+
+            {/* Synthetic Patient Profile Switcher */}
+            {patientsList?.length > 0 && (
+              <div className="flex items-center gap-2 self-start sm:self-auto">
+                <span className="text-xs text-slate-400 font-medium whitespace-nowrap">Switch Patient:</span>
+                <select
+                  value={activePatient?.syntheticId || ''}
+                  onChange={(e) => selectPatient(e.target.value)}
+                  className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500/40 focus:outline-none transition-all"
+                >
+                  {patientsList.map((p) => (
+                    <option key={p.syntheticId} value={p.syntheticId}>
+                      {p.name} ({p.bloodGroup} | {p.syntheticId})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          {/* Clinical Context Snapshot */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs bg-slate-950/40 p-3 rounded-lg border border-slate-855">
+            <div>
+              <span className="text-slate-500 text-xs block">Primary Clinical Profile:</span>
+              <span className="text-teal-300 font-medium">{activePatient?.primaryCondition || 'Type 2 Diabetes Mellitus & Penicillin Anaphylaxis'}</span>
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold text-slate-100">{activePatient?.name || 'Rahim Chowdhury (Synthetic)'}</h1>
-                <span className="badge-status badge-granted text-[10px]">Identity Verified (Mock Adapter)</span>
-              </div>
-              <div className="text-xs text-slate-400 mt-1 flex flex-wrap items-center gap-3 font-mono">
-                <span>Synthetic ID: <strong className="text-slate-300">{activePatient?.syntheticId || 'BD-HEALTH-994821'}</strong></span>
-                <span>•</span>
-                <span>Home Org: <strong className="text-slate-300">{activePatient?.homeOrg || 'Org1MSP (Hospital A)'}</strong></span>
-                <span>•</span>
-                <span>Blood: <strong className="text-slate-300">{activePatient?.bloodGroup || 'B+'}</strong></span>
-              </div>
+              <span className="text-slate-500 text-xs block">Known Drug Allergies:</span>
+              <span className="text-rose-400 font-medium">{activePatient?.knownAllergies || 'Penicillin (Severe Shock Risk)'}</span>
             </div>
           </div>
 
@@ -156,9 +189,9 @@ export default function PatientPortal() {
               <span className="flex items-center gap-1 text-slate-300">
                 <Lock className="w-3.5 h-3.5 text-teal-400" /> Pseudonymous Patient Ref Hash:
               </span>
-              <span className="text-[10px] text-slate-500">SHA256 (Zero PII On-Chain)</span>
+              <span className="text-2xs text-slate-500">SHA256 (Zero PII On-Chain)</span>
             </div>
-            <div className="text-slate-400 text-[11px] truncate select-all">
+            <div className="text-slate-400 text-xs truncate select-all">
               {patientRefHash}
             </div>
           </div>
@@ -171,7 +204,7 @@ export default function PatientPortal() {
             alt="Bangladesh National Healthcare Interoperability Card Mockup"
             className="w-full h-auto rounded-lg object-cover border border-slate-800 shadow-sm"
           />
-          <div className="mt-2 text-[10px] text-slate-500 text-center font-mono">
+          <div className="mt-2 text-2xs text-slate-500 text-center font-mono">
             National Health Data Network • Mock Identity Token
           </div>
         </div>
@@ -179,26 +212,25 @@ export default function PatientPortal() {
 
       {/* Inline Consent Notification Banner */}
       {consentNotification && (
-        <div className={`p-4 rounded-xl border flex items-center justify-between text-xs animate-fade-in ${
-          consentNotification.type === 'success'
-            ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-300'
-            : 'bg-rose-950/40 border-rose-500/30 text-rose-300'
-        }`}>
-          <div className="flex items-center gap-2.5">
-            {consentNotification.type === 'success' ? (
+        consentNotification.type === 'error' ? (
+          <ErrorBanner
+            error={consentNotification.message}
+            onDismiss={() => setConsentNotification(null)}
+          />
+        ) : (
+          <div className="p-4 rounded-xl border flex items-center justify-between text-xs animate-fade-in bg-emerald-950/40 border-emerald-500/30 text-emerald-300">
+            <div className="flex items-center gap-2.5">
               <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
-            ) : (
-              <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0" />
-            )}
-            <span>{consentNotification.message}</span>
+              <span>{consentNotification.message}</span>
+            </div>
+            <button
+              onClick={() => setConsentNotification(null)}
+              className="text-slate-400 hover:text-slate-200 ml-4 font-mono text-xs"
+            >
+              ✕
+            </button>
           </div>
-          <button
-            onClick={() => setConsentNotification(null)}
-            className="text-slate-400 hover:text-slate-200 ml-4 font-mono text-[11px]"
-          >
-            ✕
-          </button>
-        </div>
+        )
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -211,17 +243,17 @@ export default function PatientPortal() {
                 <Shield className="w-4 h-4 text-teal-400" />
                 <h2 className="text-base">Grant Granular Consent Token</h2>
               </div>
-              <span className="text-[10px] text-slate-500 font-mono">Tx: GrantConsent</span>
+              <span className="text-2xs text-slate-500 font-mono">Tx: GrantConsent</span>
             </div>
 
             <form onSubmit={handleGrantConsent} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">Grantee / Healthcare Provider</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Grantee / Healthcare Provider</label>
                   <select
                     value={grantee}
                     onChange={(e) => setGrantee(e.target.value)}
-                    className="w-full bg-slate-950/70 border border-slate-750 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-teal-500"
+                    className="w-full bg-slate-950/80 border border-slate-750 rounded-lg px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/50 transition-all"
                   >
                     <option value="DR_HASAN_CLINICIAN">Dr. Hasan Mahmud (Hospital A - Internal Med)</option>
                     <option value="DR_ALAM_EMERGENCY">Dr. Nusrat Alam (Hospital B - Emergency Dept)</option>
@@ -231,11 +263,11 @@ export default function PatientPortal() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">Declared Processing Purpose</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Declared Processing Purpose</label>
                   <select
                     value={purpose}
                     onChange={(e) => setPurpose(e.target.value)}
-                    className="w-full bg-slate-950/70 border border-slate-750 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-teal-500"
+                    className="w-full bg-slate-950/80 border border-slate-750 rounded-lg px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/50 transition-all"
                   >
                     <option value="treatment">Clinical Direct Treatment (treatment)</option>
                     <option value="emergency">Emergency Pre-Authorization (emergency)</option>
@@ -247,39 +279,39 @@ export default function PatientPortal() {
               {/* Granular Scopes */}
               <div>
                 <label className="block text-xs font-medium text-slate-300 mb-2">
-                  Granular FHIR Resource Scope (Data Minimization — No Wildcards)
+                  Granular FHIR Resource Scope (Data Minimization | No Wildcards)
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
                   <label className={`flex items-center gap-2 p-2.5 rounded-lg border text-xs cursor-pointer transition-colors ${scopeAllergy ? 'bg-slate-850 border-teal-500/40 text-teal-300' : 'bg-slate-950/50 border-slate-800 text-slate-400'}`}>
                     <input type="checkbox" checked={scopeAllergy} onChange={(e) => setScopeAllergy(e.target.checked)} className="rounded text-teal-600 bg-slate-900 border-slate-700" />
-                    <span className="font-mono text-[11px]">Allergy</span>
+                    <span className="font-mono text-xs">Allergy</span>
                   </label>
                   <label className={`flex items-center gap-2 p-2.5 rounded-lg border text-xs cursor-pointer transition-colors ${scopeMedication ? 'bg-slate-850 border-teal-500/40 text-teal-300' : 'bg-slate-950/50 border-slate-800 text-slate-400'}`}>
                     <input type="checkbox" checked={scopeMedication} onChange={(e) => setScopeMedication(e.target.checked)} className="rounded text-teal-600 bg-slate-900 border-slate-700" />
-                    <span className="font-mono text-[11px]">Medication</span>
+                    <span className="font-mono text-xs">Medication</span>
                   </label>
                   <label className={`flex items-center gap-2 p-2.5 rounded-lg border text-xs cursor-pointer transition-colors ${scopeCondition ? 'bg-slate-850 border-teal-500/40 text-teal-300' : 'bg-slate-950/50 border-slate-800 text-slate-400'}`}>
                     <input type="checkbox" checked={scopeCondition} onChange={(e) => setScopeCondition(e.target.checked)} className="rounded text-teal-600 bg-slate-900 border-slate-700" />
-                    <span className="font-mono text-[11px]">Condition</span>
+                    <span className="font-mono text-xs">Condition</span>
                   </label>
                   <label className={`flex items-center gap-2 p-2.5 rounded-lg border text-xs cursor-pointer transition-colors ${scopeObservation ? 'bg-slate-850 border-teal-500/40 text-teal-300' : 'bg-slate-950/50 border-slate-800 text-slate-400'}`}>
                     <input type="checkbox" checked={scopeObservation} onChange={(e) => setScopeObservation(e.target.checked)} className="rounded text-teal-600 bg-slate-900 border-slate-700" />
-                    <span className="font-mono text-[11px]">Observation</span>
+                    <span className="font-mono text-xs">Observation</span>
                   </label>
                   <label className={`flex items-center gap-2 p-2.5 rounded-lg border text-xs cursor-pointer transition-colors ${scopeDiagnostic ? 'bg-slate-850 border-teal-500/40 text-teal-300' : 'bg-slate-950/50 border-slate-800 text-slate-400'}`}>
                     <input type="checkbox" checked={scopeDiagnostic} onChange={(e) => setScopeDiagnostic(e.target.checked)} className="rounded text-teal-600 bg-slate-900 border-slate-700" />
-                    <span className="font-mono text-[11px]">Diagnostic</span>
+                    <span className="font-mono text-xs">Diagnostic</span>
                   </label>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-2">
-                <div className="flex items-center gap-2">
-                  <label className="text-xs text-slate-400">Validity:</label>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-850">
+                <div className="flex items-center gap-2.5">
+                  <label className="text-xs font-semibold text-slate-300">Validity Period:</label>
                   <select
                     value={expiryDays}
                     onChange={(e) => setExpiryDays(e.target.value)}
-                    className="bg-slate-950/70 border border-slate-750 rounded px-2 py-1 text-xs text-slate-200"
+                    className="bg-slate-950/80 border border-slate-750 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/50 transition-all"
                   >
                     <option value="1">24 Hours (1 Day)</option>
                     <option value="7">7 Days (Standard)</option>
@@ -290,7 +322,7 @@ export default function PatientPortal() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-medium text-xs flex items-center gap-2 shadow-sm transition-colors"
+                  className="px-4 py-2.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-medium text-xs flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer disabled:opacity-50"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   Issue On-Chain Consent
@@ -334,12 +366,12 @@ export default function PatientPortal() {
                             {c.revoked ? 'REVOKED' : 'ACTIVE'}
                           </span>
                         </div>
-                        <div className="text-[11px] text-slate-400 mt-1">
+                        <div className="text-xs text-slate-400 mt-1">
                           Purpose: <strong className="text-slate-300">{c.purpose}</strong> • Expiry: <strong className="text-slate-300">{new Date(c.expiryTimestamp).toLocaleDateString()}</strong>
                         </div>
                         <div className="flex flex-wrap gap-1.5 mt-2">
                           {c.scope.map((s) => (
-                            <span key={s} className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10px] font-mono text-slate-300">
+                            <span key={s} className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-2xs font-mono text-slate-300">
                               {s}
                             </span>
                           ))}
@@ -368,12 +400,20 @@ export default function PatientPortal() {
                 <Lock className="w-4 h-4 text-teal-400" />
                 Custodial Encrypted Health Records ({records.length})
               </h2>
-              <span className="text-[10px] text-slate-500 font-mono">Off-Chain AES-256-GCM</span>
+              <span className="text-2xs text-slate-500 font-mono">Off-Chain AES-256-GCM</span>
             </div>
 
             <p className="text-xs text-slate-400">
               Encrypted clinical payloads stored in custodial hospital repositories. Only cryptographic integrity hashes are anchored on-chain.
             </p>
+
+            {viewingError && (
+              <ErrorBanner
+                error={viewingError}
+                onDismiss={() => setViewingError(null)}
+              />
+            )}
+
 
             {records.length === 0 ? (
               <div className="p-6 text-center text-slate-500 text-xs border border-dashed border-slate-800 rounded-lg">
@@ -391,21 +431,21 @@ export default function PatientPortal() {
                         <span className="font-semibold text-slate-200 font-mono">
                           {r.fhirResourceType || r.recordType || 'FHIR Bundle'}
                         </span>
-                        <span className="badge-status badge-granted text-[9px]">
+                        <span className="badge-status badge-granted text-2xs">
                           {r.custodialOrg || 'Org1MSP'}
                         </span>
                       </div>
-                      <div className="text-[10px] font-mono text-slate-400 truncate">
+                      <div className="text-2xs font-mono text-slate-400 truncate">
                         Record ID: {r.recordId}
                       </div>
-                      <div className="text-[10px] font-mono text-slate-500 truncate">
+                      <div className="text-2xs font-mono text-slate-500 truncate">
                         Hash: {r.recordHash ? `${r.recordHash.substring(0, 20)}...` : 'Anchored SHA-256'}
                       </div>
                     </div>
                     <button
                       onClick={() => handleViewRecord(r.recordId)}
                       disabled={viewingLoading}
-                      className="w-full mt-2 py-1 px-2.5 rounded bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-200 text-[11px] font-medium flex items-center justify-center gap-1.5 transition-colors"
+                      className="w-full mt-2 py-1 px-2.5 rounded bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-200 text-xs font-medium flex items-center justify-center gap-1.5 transition-colors"
                     >
                       <Eye className="w-3.5 h-3.5 text-teal-400" />
                       {viewingLoading ? 'Decrypting...' : 'View Decrypted FHIR'}
@@ -425,7 +465,7 @@ export default function PatientPortal() {
                 <History className="w-4 h-4 text-teal-400" />
                 Immutable Access Audit Log
               </h2>
-              <span className="text-[10px] font-mono text-slate-500">Channel Ledger</span>
+              <span className="text-2xs font-mono text-slate-500">Channel Ledger</span>
             </div>
 
             <p className="text-xs text-slate-400">
@@ -444,14 +484,14 @@ export default function PatientPortal() {
                       <span className={`badge-status ${ev.status === 'GRANTED' || ev.status === 'GRANTED_BREAKGLASS' || ev.status === 'GRANTED_PATIENT_OWNER' ? 'badge-granted' : 'badge-revoked'}`}>
                         {ev.status}
                       </span>
-                      <span className="text-[10px] text-slate-500 font-mono">
+                      <span className="text-2xs text-slate-500 font-mono">
                         {new Date(ev.timestamp).toLocaleTimeString()}
                       </span>
                     </div>
-                    <div className="text-slate-300 font-mono text-[11px]">
+                    <div className="text-slate-300 font-mono text-xs">
                       Accessor: {ev.accessorHash?.substring(0, 12)}...
                     </div>
-                    <div className="text-[10px] text-slate-400">
+                    <div className="text-2xs text-slate-400">
                       Scope: <span className="text-slate-200 font-mono">{ev.scope}</span> • Purpose: {ev.purpose}
                     </div>
                   </div>
@@ -471,7 +511,7 @@ export default function PatientPortal() {
                 <Lock className="w-5 h-5 text-teal-400" />
                 <div>
                   <h3 className="font-bold text-slate-100 text-sm">Decrypted Patient Health Record</h3>
-                  <p className="text-[11px] text-slate-400 font-mono">Record ID: {viewingRecord.recordId}</p>
+                  <p className="text-xs text-slate-400 font-mono">Record ID: {viewingRecord.recordId}</p>
                 </div>
               </div>
               <button
@@ -483,7 +523,7 @@ export default function PatientPortal() {
             </div>
 
             <div className="p-6 overflow-y-auto custom-scrollbar space-y-4 text-xs">
-              <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg flex flex-wrap gap-4 font-mono text-[11px]">
+              <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg flex flex-wrap gap-4 font-mono text-xs">
                 <div>
                   <span className="text-slate-500">Record Hash: </span>
                   <span className="text-teal-400">{viewingRecord.recordHash?.substring(0, 24)}...</span>
@@ -507,11 +547,11 @@ export default function PatientPortal() {
                       <div key={idx} className="p-3.5 bg-slate-950 border border-slate-800/80 rounded-lg space-y-1">
                         <div className="flex items-center justify-between">
                           <span className="font-bold text-teal-300 font-mono">{res?.resourceType}</span>
-                          <span className="text-[10px] text-slate-500 font-mono">ID: {res?.id}</span>
+                          <span className="text-2xs text-slate-500 font-mono">ID: {res?.id}</span>
                         </div>
                         {res?.resourceType === 'AllergyIntolerance' && (
                           <div className="text-slate-300">
-                            <strong>Substance: </strong>{res?.code?.coding?.[0]?.display || 'Penicillin'} ({res?.code?.coding?.[0]?.code}) — <span className="text-rose-400 font-semibold">{res?.criticality?.toUpperCase()} CRITICALITY</span>
+                            <strong>Substance: </strong>{res?.code?.coding?.[0]?.display || 'Penicillin'} ({res?.code?.coding?.[0]?.code}) | <span className="text-rose-400 font-semibold">{res?.criticality?.toUpperCase()} CRITICALITY</span>
                           </div>
                         )}
                         {res?.resourceType === 'MedicationRequest' && (
@@ -531,7 +571,7 @@ export default function PatientPortal() {
                         )}
                         {res?.resourceType === 'DiagnosticReport' && (
                           <div className="text-slate-300">
-                            <strong>Diagnostic Report: </strong>{res?.code?.coding?.[0]?.display || 'Panel'} — Status: {res?.status}
+                            <strong>Diagnostic Report: </strong>{res?.code?.coding?.[0]?.display || 'Panel'} | Status: {res?.status}
                           </div>
                         )}
                         {res?.resourceType === 'Patient' && (
@@ -546,11 +586,11 @@ export default function PatientPortal() {
               </div>
 
               <div>
-                <details className="bg-slate-950/70 p-3 rounded-lg border border-slate-800 text-[11px]">
+                <details className="bg-slate-950/70 p-3 rounded-lg border border-slate-800 text-xs">
                   <summary className="font-mono text-slate-400 cursor-pointer hover:text-slate-300">
                     View Raw Decrypted HL7 FHIR R4 JSON
                   </summary>
-                  <pre className="mt-2 text-slate-300 font-mono text-[10px] overflow-x-auto p-2 bg-slate-900/90 rounded custom-scrollbar max-h-60">
+                  <pre className="mt-2 text-slate-300 font-mono text-2xs overflow-x-auto p-2 bg-slate-900/90 rounded custom-scrollbar max-h-60">
                     {JSON.stringify(viewingRecord.fhirBundle, null, 2)}
                   </pre>
                 </details>

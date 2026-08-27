@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Flame, AlertOctagon, Clock, ShieldAlert, CheckCircle, Unlock, Activity, Lock } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import ErrorBanner from '../components/ErrorBanner';
 
 export default function EmergencyPortal() {
-  const { activePatient, showTransactionReceipt } = useAuth();
+  const { activePatient, patientsList, selectPatient, showTransactionReceipt } = useAuth();
   const [patientRefHash, setPatientRefHash] = useState(
     activePatient?.patientRefHash || 'c7e9a8b1d2f4567890abcdef1234567890abcdef1234567890abcdef12345678'
   );
@@ -127,23 +128,47 @@ export default function EmergencyPortal() {
             </h2>
 
             <form onSubmit={handleBreakGlass} className="space-y-4">
+              {/* Quick Select Synthetic Trauma Patient */}
+              {patientsList?.length > 0 && (
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                    Select Patient in Resuscitation (1-Click Fill)
+                  </label>
+                  <select
+                    value={activePatient?.syntheticId || ''}
+                    onChange={(e) => {
+                      selectPatient(e.target.value);
+                      const sel = patientsList.find(p => p.syntheticId === e.target.value);
+                      if (sel?.patientRefHash) setPatientRefHash(sel.patientRefHash);
+                    }}
+                    className="w-full bg-slate-950/70 border border-rose-900/50 rounded-lg px-3 py-2 text-xs text-rose-300 focus:outline-none focus:border-rose-500"
+                  >
+                    {patientsList.map((p) => (
+                      <option key={p.syntheticId} value={p.syntheticId}>
+                        {p.name} ({p.bloodGroup}) | {p.primaryCondition || 'Emergency Case'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">Patient Ref Hash</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">Patient Ref Hash</label>
                 <input
                   type="text"
                   value={patientRefHash}
                   onChange={(e) => setPatientRefHash(e.target.value)}
-                  className="w-full bg-slate-950/70 border border-slate-750 rounded-lg px-3 py-2 text-xs font-mono text-slate-200"
+                  className="w-full bg-slate-950/80 border border-slate-750 rounded-lg px-3.5 py-2.5 text-xs font-mono text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/40 transition-all"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">Clinical Emergency Protocol (Reason Code)</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">Clinical Emergency Protocol (Reason Code)</label>
                 <select
                   value={reasonCode}
                   onChange={(e) => setReasonCode(e.target.value)}
-                  className="w-full bg-slate-950/70 border border-slate-750 rounded-lg px-3 py-2 text-xs text-slate-200 focus:border-rose-500"
+                  className="w-full bg-slate-950/80 border border-slate-750 rounded-lg px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/40 transition-all"
                 >
                   <option value="UNCONSCIOUS_SUSPECTED_ANAPHYLAXIS">UNCONSCIOUS_SUSPECTED_ANAPHYLAXIS (Anaphylactic Shock)</option>
                   <option value="TRAUMA_RESUSCITATION">TRAUMA_RESUSCITATION (Severe Polytrauma)</option>
@@ -156,36 +181,36 @@ export default function EmergencyPortal() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">Minimum-Necessary Break-Glass Scope</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">Minimum-Necessary Break-Glass Scope</label>
                 <div className="grid grid-cols-2 gap-3 text-xs">
-                  <span className="p-2.5 rounded-lg bg-slate-950/50 border border-slate-800 text-slate-300 font-mono">
+                  <span className="p-2.5 rounded-lg bg-slate-950/70 border border-slate-800 text-slate-200 font-mono text-center">
                     AllergyIntolerance
                   </span>
-                  <span className="p-2.5 rounded-lg bg-slate-950/50 border border-slate-800 text-slate-300 font-mono">
+                  <span className="p-2.5 rounded-lg bg-slate-950/70 border border-slate-800 text-slate-200 font-mono text-center">
                     MedicationRequest
                   </span>
                 </div>
               </div>
 
-              <div className="p-3 bg-slate-950/70 rounded-lg border border-slate-800 text-xs">
-                <label className="flex items-center gap-2 cursor-pointer text-slate-200">
+              <div className="p-3.5 bg-slate-950/80 rounded-xl border border-rose-900/50 text-xs">
+                <label className="flex items-start gap-3 cursor-pointer text-slate-200">
                   <input
                     type="checkbox"
                     checked={mfaConfirmed}
                     onChange={(e) => setMfaConfirmed(e.target.checked)}
-                    className="rounded text-rose-600 bg-slate-900 border-slate-700"
+                    className="mt-0.5 rounded text-rose-600 bg-slate-900 border-slate-700 focus:ring-rose-500 w-4 h-4 shrink-0"
                   />
-                  <span>
-                    <strong className="text-slate-100">Clinician Attestation:</strong> I verify under penalty of medical license revocation that this is a life-threatening emergency.
+                  <span className="leading-relaxed">
+                    <strong className="text-rose-300 font-semibold">Clinician Legal Attestation:</strong> I verify under penalty of medical license revocation and BMDC disciplinary action that this is an acute life-threatening emergency.
                   </span>
                 </label>
               </div>
 
               {emergencyError && (
-                <div className="p-3 bg-rose-950/50 border border-rose-500/40 rounded-lg text-rose-300 text-xs flex items-center gap-2">
-                  <AlertOctagon className="w-4 h-4 text-rose-400 shrink-0" />
-                  <span>{emergencyError}</span>
-                </div>
+                <ErrorBanner
+                  error={emergencyError}
+                  onDismiss={() => setEmergencyError(null)}
+                />
               )}
 
               <button
@@ -216,7 +241,7 @@ export default function EmergencyPortal() {
                   <div className="text-3xl font-bold font-mono text-rose-400">
                     {formatTimer(timeLeftSeconds)}
                   </div>
-                  <div className="text-[11px] text-slate-500">Automatic closure upon timer expiration</div>
+                  <div className="text-xs text-slate-500">Automatic closure upon timer expiration</div>
                 </div>
 
                 <div className="text-xs font-mono space-y-2 bg-slate-950/70 p-3.5 rounded-lg border border-slate-800">
@@ -230,7 +255,7 @@ export default function EmergencyPortal() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-500">Review Status:</span>
-                    <span className="badge-status badge-pending text-[10px]">PENDING AUDITOR REVIEW</span>
+                    <span className="badge-status badge-pending text-2xs">PENDING AUDITOR REVIEW</span>
                   </div>
                 </div>
 
@@ -242,13 +267,13 @@ export default function EmergencyPortal() {
                   </div>
                   <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-lg text-xs space-y-1">
                     <div className="font-bold text-rose-200">⚠️ SEVERE ALLERGY: Penicillin</div>
-                    <p className="text-[11px] text-rose-300">Reaction: Severe Anaphylactic Shock & Bronchospasm (SNOMED 39579001). DO NOT ADMINISTER PENICILLIN DERIVATIVES.</p>
+                    <p className="text-xs text-rose-300">Reaction: Severe Anaphylactic Shock & Bronchospasm (SNOMED 39579001). DO NOT ADMINISTER PENICILLIN DERIVATIVES.</p>
                   </div>
                   <div className="p-3 bg-slate-900 border border-slate-750 rounded-lg text-xs space-y-1">
                     <div className="font-bold text-slate-200">Active Medication: Metformin 500mg</div>
-                    <p className="text-[11px] text-slate-400">Oral hypoglycemic for Type 2 Diabetes (RxNorm 860975).</p>
+                    <p className="text-xs text-slate-400">Oral hypoglycemic for Type 2 Diabetes (RxNorm 860975).</p>
                   </div>
-                  <div className="text-[10px] text-slate-500 text-center font-mono">
+                  <div className="text-2xs text-slate-500 text-center font-mono">
                     Decrypted via 60-min Break-Glass Override • AES-256-GCM
                   </div>
                 </div>
