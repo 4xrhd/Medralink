@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const { PORT } = require('./config/env');
 const { authMiddleware } = require('./middleware/auth');
+const { compressionMiddleware } = require('./middleware/compression');
 const errorHandler = require('./middleware/errorHandler');
 
 const patientsRouter = require('./routes/patients');
@@ -19,6 +20,7 @@ const app = express();
 // Security and performance hardening
 app.disable('x-powered-by');
 app.use(cors({ origin: '*' }));
+app.use(compressionMiddleware);
 app.use(express.json({ limit: '4mb' }));
 app.use(authMiddleware);
 

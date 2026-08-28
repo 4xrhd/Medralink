@@ -1,36 +1,59 @@
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Banner from './components/Banner';
 import Navbar from './components/Navbar';
 import TransactionReceipt from './components/TransactionReceipt';
 import DemoTourModal from './components/DemoTourModal';
 
-import PatientPortal from './pages/PatientPortal';
-import ClinicianPortal from './pages/ClinicianPortal';
-import EmergencyPortal from './pages/EmergencyPortal';
-import AuditorPortal from './pages/AuditorPortal';
-import AdminPortal from './pages/AdminPortal';
-import AgenticAIPortal from './pages/AgenticAIPortal';
+// Route-level Dynamic Code-Splitting
+const PatientPortal = lazy(() => import('./pages/PatientPortal'));
+const ClinicianPortal = lazy(() => import('./pages/ClinicianPortal'));
+const EmergencyPortal = lazy(() => import('./pages/EmergencyPortal'));
+const AuditorPortal = lazy(() => import('./pages/AuditorPortal'));
+const AdminPortal = lazy(() => import('./pages/AdminPortal'));
+const AgenticAIPortal = lazy(() => import('./pages/AgenticAIPortal'));
+
+function LoadingFallback() {
+  return (
+    <div className="app-container py-16 flex flex-col items-center justify-center space-y-4">
+      <div className="w-10 h-10 border-2 border-teal-500/30 border-t-teal-400 rounded-full animate-spin"></div>
+      <span className="text-xs font-mono text-slate-400">Loading MedraLink Consortium Module...</span>
+    </div>
+  );
+}
 
 function PortalRouter() {
   const { currentRole } = useAuth();
 
+  let Component;
   switch (currentRole) {
     case 'Patient':
-      return <PatientPortal />;
+      Component = PatientPortal;
+      break;
     case 'Clinician':
-      return <ClinicianPortal />;
+      Component = ClinicianPortal;
+      break;
     case 'Emergency':
-      return <EmergencyPortal />;
+      Component = EmergencyPortal;
+      break;
     case 'Auditor':
-      return <AuditorPortal />;
+      Component = AuditorPortal;
+      break;
     case 'Admin':
-      return <AdminPortal />;
+      Component = AdminPortal;
+      break;
     case 'AgenticAI':
-      return <AgenticAIPortal />;
+      Component = AgenticAIPortal;
+      break;
     default:
-      return <PatientPortal />;
+      Component = PatientPortal;
   }
+
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <Component />
+    </Suspense>
+  );
 }
 
 export default function App() {

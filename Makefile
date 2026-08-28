@@ -17,6 +17,10 @@ test:
 	@echo "▶ Running Backend API Integration Tests..."
 	@cd api && npm test
 
+benchmark:
+	@echo "▶ Running Full-Stack Performance Benchmark Suite..."
+	@cd api && npm run benchmark
+
 build:
 	@echo "▶ Building Frontend React SPA..."
 	@cd frontend && npm run build

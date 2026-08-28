@@ -479,13 +479,14 @@ class FabricLedgerService extends EventEmitter {
 
   async getAuditHistory(patientRefHash) {
     const requestIds = this.patientAuditIndex.get(patientRefHash);
-    if (!requestIds) return [];
+    if (!requestIds || requestIds.size === 0) return [];
     const results = [];
     for (const reqId of requestIds) {
       const ev = this.worldState.get(`AUDIT_${reqId}`);
       if (ev) results.push(ev);
     }
-    return results.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    // Items were inserted chronologically; reversing yields reverse-chronological order in O(N)
+    return results.reverse();
   }
 
   async getAllEmergencyEvents() {
