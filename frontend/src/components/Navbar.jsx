@@ -86,31 +86,34 @@ export default function Navbar({ onOpenDemoTour }) {
             </button>
 
             {roleDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-64 glass-panel p-1.5 text-xs shadow-xl z-50 animate-in fade-in">
-                <div className="px-3 py-1.5 text-2xs uppercase font-semibold text-slate-500 tracking-wider">
-                  Switch Portal Role (5 Roles)
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setRoleDropdownOpen(false)} />
+                <div className="absolute right-0 mt-2 w-64 bg-slate-900 border border-slate-750 rounded-xl p-1.5 text-xs shadow-2xl z-50 animate-in fade-in">
+                  <div className="px-3 py-1.5 text-2xs uppercase font-semibold text-slate-400 tracking-wider border-b border-slate-800/80 mb-1">
+                    Switch Portal Role (5 Roles)
+                  </div>
+                  {DEMO_ROLES.map((role) => (
+                    <button
+                      key={role.id}
+                      onClick={() => {
+                        switchRole(role.id);
+                        setRoleDropdownOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-colors ${
+                        currentRole === role.id
+                          ? 'bg-slate-800 text-slate-100 font-medium border border-slate-700'
+                          : 'text-slate-300 hover:bg-slate-850'
+                      }`}
+                    >
+                      {getRoleIcon(role.id)}
+                      <div>
+                        <div className="font-medium">{role.label}</div>
+                        <div className="text-2xs text-slate-400">{role.org}</div>
+                      </div>
+                    </button>
+                  ))}
                 </div>
-                {DEMO_ROLES.map((role) => (
-                  <button
-                    key={role.id}
-                    onClick={() => {
-                      switchRole(role.id);
-                      setRoleDropdownOpen(false);
-                    }}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-left transition-colors ${
-                      currentRole === role.id
-                        ? 'bg-slate-800 text-slate-100 font-medium'
-                        : 'text-slate-300 hover:bg-slate-850'
-                    }`}
-                  >
-                    {getRoleIcon(role.id)}
-                    <div>
-                      <div className="font-medium">{role.label}</div>
-                      <div className="text-2xs text-slate-400">{role.org}</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
+              </>
             )}
           </div>
         </div>
