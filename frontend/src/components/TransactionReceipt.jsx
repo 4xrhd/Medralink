@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { CheckCircle2, Copy, Check, X, Layers, Clock, Shield } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useClipboard } from '../hooks/useClipboard';
@@ -6,15 +6,39 @@ import { useClipboard } from '../hooks/useClipboard';
 export default function TransactionReceipt() {
   const { recentTransaction, closeReceipt } = useAuth();
   const { copied, copy } = useClipboard();
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    if (recentTransaction) {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
+        closeReceipt();
+      }, 9000);
+    }
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [recentTransaction, closeReceipt]);
 
   if (!recentTransaction) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 max-w-md w-full animate-bounce-in">
+    <div 
+      className="fixed bottom-6 right-6 z-50 max-w-md w-full animate-bounce-in"
+      role="region"
+      aria-label="Blockchain Transaction Receipt"
+      onMouseEnter={() => {
+        if (timerRef.current) clearTimeout(timerRef.current);
+      }}
+      onMouseLeave={() => {
+        timerRef.current = setTimeout(closeReceipt, 4000);
+      }}
+    >
       <div className="glass-panel p-5 text-slate-100 shadow-xl relative border-slate-700/80 bg-slate-900/95">
         <button
           onClick={closeReceipt}
-          className="absolute top-3 right-3 text-slate-400 hover:text-slate-200 transition-colors"
+          aria-label="Close transaction receipt"
+          className="absolute top-3 right-3 text-slate-400 hover:text-slate-200 transition-colors p-1 rounded hover:bg-slate-800"
         >
           <X className="w-4 h-4" />
         </button>

@@ -6,15 +6,24 @@
 class OffChainStorageService {
   constructor() {
     this.store = new Map();
+    this.patientRecordsIndex = new Map(); // patientRefHash -> Set<recordId>
   }
 
   saveRecord(recordId, recordData) {
-    this.store.set(recordId, {
+    const entry = {
       recordId,
       ...recordData,
       savedAt: new Date().toISOString(),
-    });
-    return this.store.get(recordId);
+    };
+    this.store.set(recordId, entry);
+
+    if (recordData.patientRefHash) {
+      if (!this.patientRecordsIndex.has(recordData.patientRefHash)) {
+        this.patientRecordsIndex.set(recordData.patientRefHash, new Set());
+      }
+      this.patientRecordsIndex.get(recordData.patientRefHash).add(recordId);
+    }
+    return entry;
   }
 
   getRecord(recordId) {
@@ -22,21 +31,31 @@ class OffChainStorageService {
   }
 
   deleteRecord(recordId) {
+    const record = this.store.get(recordId);
+    if (record && record.patientRefHash) {
+      const pSet = this.patientRecordsIndex.get(record.patientRefHash);
+      if (pSet) {
+        pSet.delete(recordId);
+        if (pSet.size === 0) this.patientRecordsIndex.delete(record.patientRefHash);
+      }
+    }
     return this.store.delete(recordId);
   }
 
   listRecordsForPatient(patientRefHash) {
+    const recordIds = this.patientRecordsIndex.get(patientRefHash);
+    if (!recordIds || recordIds.size === 0) return [];
     const results = [];
-    for (const [id, data] of this.store.entries()) {
-      if (data.patientRefHash === patientRefHash) {
-        results.push(data);
-      }
+    for (const id of recordIds) {
+      const record = this.store.get(id);
+      if (record) results.push(record);
     }
     return results;
   }
 
   clear() {
     this.store.clear();
+    this.patientRecordsIndex.clear();
   }
 }
 
